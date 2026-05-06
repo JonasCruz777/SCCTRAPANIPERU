@@ -1534,76 +1534,105 @@ async function sincronizarRecepcionConfirmada(viaje){
 // ═══════════════════════════════════════
 //  AUTO SYNC & LIMPIEZA
 // ═══════════════════════════════════════
+
+async function actualizarRecepcion(){
+  const btn=event?event.target:null;
+  if(btn){btn.textContent='Actualizando...';btn.disabled=true;}
+  const online=await checkSyncStatus();
+  if(!online){
+    toast('Sin conexión. No se puede actualizar.',true);
+    if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
+    return;
+  }
+  try{
+    const res=await jsonp({action:'getViajes',estado:''});
+    if(res&&res.ok&&res.rows){
+      // Merge cloud viajes into local — cloud is source of truth for received viajes
+      const local=loadData('viajes');
+      const localIds=new Set(local.map(v=>String(v.id)));
+      let added=0,updated=0;
+      res.rows.forEach(cloudV=>{
+        // Only process enviado or recibido from cloud
+        if(cloudV.estado==='transito') return; // skip, never show transito in recepcion
+        // Parse lotes if string
+        if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
+        // Convert numeric strings
+        // Keep original string formats — only convert what's strictly needed
+        cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
+        cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
+          ? parseInt(cloudV.totalRec) : null;
+        cloudV.id = cloudV.id; // keep as-is
+        const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
+        // Ensure fechaISO is present on cloud viaje
+        if(!cloudV.fechaISO && cloudV.fecha){
+          // Try to parse fecha to ISO
+          try{
+            const parts = cloudV.fecha.split('/');
+            if(parts.length===3){
+              cloudV.fechaISO = parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+            }
+          }catch(e){}
+        }
+        if(localIdx===-1){
+          if((ESTADO_PRIORITY[cloudV.estado]||0) >= 1) { local.unshift(cloudV); added++; }
+        } else {
+          const lp = ESTADO_PRIORITY[local[localIdx].estado]||0;
+          const cp = ESTADO_PRIORITY[cloudV.estado]||0;
+          if(cp >= lp){ local[localIdx]=Object.assign(local[localIdx],cloudV); }
+          updated++;
+        }
+      });
+      saveData('viajes',local);
+      renderRecList();
+      toast('Actualizado: '+added+' nuevas, '+updated+' actualizadas.','ok');
+    }
+  }catch(e){
+    toast('Error al actualizar. Intenta de nuevo.',true);
+  }
+  if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
+}
+
+async function sincronizarRecepcionConfirmada(viaje){
+  // Update local transport viajes estado to 'recepcionado'
+  const viajesLocal = loadData('viajes');
+  const idx = viajesLocal.findIndex(v=>String(v.id)===String(viaje.id));
+  if(idx!==-1){
+    viajesLocal[idx] = Object.assign(viajesLocal[idx], {
+      estado:'recepcionado',
+      totalRec:viaje.totalRec,
+      descInicio:viaje.descInicio,
+      descFin:viaje.descFin,
+      obs:viaje.obs,
+      lotes:viaje.lotes
+    });
+    saveData('viajes', viajesLocal);
+    renderViajesList(); // refresh transport list
+  }
+  // Push to cloud
+  const online = await checkSyncStatus();
+  if(!online) return;
+  try{
+    await jsonp({
+      action:'updateViaje',
+      guia:viaje.guia,
+      data:JSON.stringify({
+        estado:'recepcionado',
+        totalRec:viaje.totalRec,
+        descInicio:viaje.descInicio,
+        descFin:viaje.descFin,
+        obs:viaje.obs,
+        lotes:viaje.lotes
+      })
+    });
+  }catch(e){/* silent fail */}
+}
+
+// ═══════════════════════════════════════
+//  AUTO SYNC & LIMPIEZA
+// ═══════════════════════════════════════
 // Estado priority: recepcionado > recibido > enviado > transito
 const ESTADO_PRIORITY = {transito:0, enviado:1, recibido:2, recepcionado:3};
 
-async function autoSyncViajes(){
-  const online = await checkSyncStatus();
-  if(!online) return;
-
-  try{
-    const res = await jsonp({action:'getViajes', estado:''});
-    if(!res || !res.ok || !res.rows) return;
-
-    const now = new Date();
-    const todayISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-    const todayLocal = now.toLocaleDateString('es-PE');
-
-    // Parse cloud rows
-    const sheetRows = res.rows.map(cloudV => {
-      // Normalize fechaISO
-      if(!cloudV.fechaISO && cloudV.fecha){
-        try{
-          const p = cloudV.fecha.split('/');
-          if(p.length===3) cloudV.fechaISO = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
-        }catch(e){}
-      }
-      if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
-      cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
-      cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
-        ? parseInt(cloudV.totalRec) : null;
-      return cloudV;
-    }).filter(v => v.fechaISO===todayISO || v.fecha===todayLocal);
-
-    // Load local
-    const local = loadData('viajes');
-
-    // Merge strategy: local estado wins if it's more advanced than Sheet
-    const merged = [...local]; // start with all local
-
-    sheetRows.forEach(cloudV => {
-      const localIdx = merged.findIndex(v => String(v.id)===String(cloudV.id));
-      if(localIdx === -1){
-        // New from Sheet — only add if enviado or higher (not transito)
-        if((ESTADO_PRIORITY[cloudV.estado]||0) >= 1){
-          merged.push(cloudV);
-        }
-      } else {
-        const localPriority = ESTADO_PRIORITY[merged[localIdx].estado]||0;
-        const cloudPriority = ESTADO_PRIORITY[cloudV.estado]||0;
-        // Only update if Sheet has HIGHER or EQUAL priority state
-        if(cloudPriority >= localPriority){
-          merged[localIdx] = Object.assign(merged[localIdx], cloudV);
-        }
-        // If local is more advanced (e.g. local=enviado, sheet=transito) → keep local
-      }
-    });
-
-    // If Sheet is completely empty, clear local viajes too
-    if(res.rows.length === 0){
-      saveData('viajes', []);
-      renderViajesList();
-      renderRecList();
-      return;
-    }
-
-    saveData('viajes', merged);
-    renderViajesList();
-    renderRecList();
-  }catch(e){
-    // silent fail
-  }
-}
 
 function limpiarViajesLocal(from){
   if(!confirm('¿Limpiar todos los viajes del local? Esta acción no afecta el Sheet.')) return;
