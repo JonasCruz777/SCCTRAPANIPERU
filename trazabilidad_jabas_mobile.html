@@ -1117,8 +1117,8 @@ function renderViajesList(){
     let badge='';
     if(v.estado==='transito')       badge='<span class="badge badge-transit">En tránsito</span>';
     else if(v.estado==='enviado')   badge='<span class="badge badge-rol">Enviado</span>';
-    else if(dif===0)                badge='<span class="badge badge-received">Recibido</span>';
-    else                            badge='<span class="badge badge-diff">Recibido · Dif: '+(dif>0?'+':'')+dif+'</span>';
+    else if(dif===0)                badge='<span class="badge badge-received">Recepcionado</span>';
+    else                            badge='<span class="badge badge-diff">Recepcionado · Dif: '+(dif>0?'+':'')+dif+'</span>';
 
     let syncBtn='';
     if(v.estado==='transito'){
@@ -1128,7 +1128,7 @@ function renderViajesList(){
     } else {
       syncBtn=`<span style="font-size:10px;color:var(--green)">✓ Recepcionado${v.totalRec!==null?' · '+v.totalRec+' jabas':''}</span>`;
     }
-    return `<div class="viaje-card" style="${v.estado==='recepcionado'?'opacity:.7':'"}>
+    return `<div class="viaje-card" style="${v.estado==='recibido'?'opacity:.7;':''}">
       <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
       <div class="viaje-meta">
         <span>${v.chofer}</span><span>${v.tipo}</span>
