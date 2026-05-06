@@ -1089,7 +1089,7 @@ function renderViajesList(){
   g('trp-count-label').textContent='— '+hoy.length+' registrados';
   if(!hoy.length){g('trp-viajes-list').innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div>';return;}
   // Sort: transito first, enviado second, recibido last
-  const ordenEstado = {transito:0, enviado:1, recepcionado:2};
+  const ordenEstado = {transito:0, enviado:1, recibido:2, recepcionado:2};
   hoy.sort((a,b)=>(ordenEstado[a.estado]||0)-(ordenEstado[b.estado]||0));
 
   g('trp-viajes-list').innerHTML=hoy.map(v=>{
@@ -1108,7 +1108,7 @@ function renderViajesList(){
     } else {
       syncBtn=`<span style="font-size:10px;color:var(--green)">✓ Recepcionado${v.totalRec!==null?' · '+v.totalRec+' jabas':''}</span>`;
     }
-    return `<div class="viaje-card" style="${v.estado==='recibido'?'opacity:.7;':''}">
+    return `<div class="viaje-card" style="${(v.estado==='recibido'||v.estado==='recepcionado')?'opacity:.7;':''}">
       <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
       <div class="viaje-meta">
         <span>${v.chofer}</span><span>${v.tipo}</span>
@@ -1192,11 +1192,15 @@ function exportarReportes(){
 // ═══════════════════════════════════════
 function renderRecList(){
   const viajes=loadData('viajes');
-  const today=new Date().toLocaleDateString('es-PE');
-  // Recepcion only sees 'enviado' and 'recepcionado' — never 'transito'
-  const hoy=viajes.filter(v=>v.fecha===today && (v.estado==='enviado'||v.estado==='recepcionado'));
+  const now=new Date();
+  const todayISO=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const todayLocal=now.toLocaleDateString('es-PE');
+  // Match by fechaISO or fecha, accept enviado/recibido/recepcionado
+  const esHoy=v=>(v.fechaISO===todayISO||v.fecha===todayLocal);
+  const esVisible=v=>v.estado==='enviado'||v.estado==='recibido'||v.estado==='recepcionado';
+  const hoy=viajes.filter(v=>esHoy(v)&&esVisible(v));
   const enviados=hoy.filter(v=>v.estado==='enviado');
-  const recibidos=hoy.filter(v=>v.estado==='recepcionado');
+  const recibidos=hoy.filter(v=>v.estado==='recibido'||v.estado==='recepcionado');
   g('rec-stat-transit').textContent=enviados.length;
   g('rec-stat-rec').textContent=recibidos.length;
   const html=[
@@ -1212,11 +1216,11 @@ function renderRecList(){
 function recCard(v){
   const dif=v.totalRec!==null?v.totalRec-v.totalEnv:null;
   let badge='';
-  if(v.estado==='enviado')      badge='<span class="badge badge-transit">Pendiente</span>';
-  else if(dif===0)              badge='<span class="badge badge-received">Recepcionado</span>';
-  else                          badge='<span class="badge badge-diff">Recepcionado · Dif: '+(dif>0?'+':'')+dif+'</span>';
+  if(v.estado==='enviado')           badge='<span class="badge badge-transit">Pendiente</span>';
+  else if(dif===0||dif===null)       badge='<span class="badge badge-received">Recepcionado</span>';
+  else                               badge='<span class="badge badge-diff">Recepcionado · Dif: '+(dif>0?'+':'')+dif+'</span>';
   const sel=selectedViajeId===v.id?' selected':'';
-  const opacity=v.estado==='recibido'?'opacity:.7;':'';
+  const opacity=(v.estado==='recibido'||v.estado==='recepcionado')?'opacity:.7;':'';
   return `<div class="viaje-card${sel}" onclick="selectViaje(${v.id})" style="${opacity}">
     <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
     <div class="viaje-meta"><span>${v.chofer}</span><span>${v.tipo}</span><span>Salida: ${v.hsalida}</span><span>Llegada: ${v.hllegada}</span></div>
@@ -1431,11 +1435,19 @@ async function actualizarRecepcion(){
           ? parseInt(cloudV.totalRec) : null;
         cloudV.id = cloudV.id; // keep as-is
         const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
+        // Ensure fechaISO is present on cloud viaje
+        if(!cloudV.fechaISO && cloudV.fecha){
+          // Try to parse fecha to ISO
+          try{
+            const parts = cloudV.fecha.split('/');
+            if(parts.length===3){
+              cloudV.fechaISO = parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+            }
+          }catch(e){}
+        }
         if(localIdx===-1){
-          // Only add if it was exported (enviado) — not a local-only transito
           local.unshift(cloudV); added++;
         } else {
-          // Update local with cloud state (enviado → recibido updates)
           local[localIdx]=Object.assign(local[localIdx],cloudV);
           updated++;
         }
