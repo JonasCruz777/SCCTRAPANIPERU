@@ -1064,7 +1064,10 @@ function registrarViaje(){
   if(!lotes.length){toast('Agrega al menos un lote.',true);return;}
   const totalEnv=lotes.reduce((a,l)=>a+l.enviadas,0);
   const guia='GT-'+String(guiaNum).padStart(4,'0'); guiaNum++;
-  const now2=new Date();const viaje={id:Date.now(),guia,chofer,tipo,hcarga,hsalida,hllegada,descInicio:'',descFin:'',lotes,totalEnv,totalRec:null,estado:'transito',obs:'',fecha:now2.toLocaleDateString('es-PE'),fechaISO:now2.toISOString().split('T')[0]};
+  const now2=new Date();
+  const fechaLocal=now2.toLocaleDateString('es-PE'); // e.g. 6/5/2026
+  const fechaISO=now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-'+String(now2.getDate()).padStart(2,'0');
+  const viaje={id:Date.now(),guia,chofer,tipo,hcarga,hsalida,hllegada,descInicio:'',descFin:'',lotes,totalEnv,totalRec:null,estado:'transito',obs:'',fecha:fechaLocal,fechaISO:fechaISO};
   const viajes=loadData('viajes'); viajes.unshift(viaje); saveData('viajes',viajes);
   // Reset form completamente
   g('trp-chofer').value=''; g('trp-tipo').value='';
@@ -1445,9 +1448,11 @@ async function actualizarRecepcion(){
         // Parse lotes if string
         if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
         // Convert numeric strings
-        cloudV.totalEnv=parseInt(cloudV.totalEnv)||0;
-        cloudV.totalRec=cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined?parseInt(cloudV.totalRec):null;
-        cloudV.id=parseInt(cloudV.id)||cloudV.id;
+        // Keep original string formats — only convert what's strictly needed
+        cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
+        cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
+          ? parseInt(cloudV.totalRec) : null;
+        cloudV.id = cloudV.id; // keep as-is
         const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
         if(localIdx===-1){
           // Only add if it was exported (enviado) — not a local-only transito
