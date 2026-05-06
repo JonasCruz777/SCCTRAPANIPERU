@@ -433,7 +433,7 @@ tr:hover td{background:var(--bg3)}
       <button onclick="actualizarRecepcion()" style="font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Actualizar</button>
     </div>
     <div class="stats-grid">
-      <div class="stat-card warn"><span>Pendientes</span><strong id="rec-stat-transit">0</strong></div>
+      <div class="stat-card warn"><span>En tránsito</span><strong id="rec-stat-transit">0</strong></div>
       <div class="stat-card ok"><span>Recibidos hoy</span><strong id="rec-stat-rec">0</strong></div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Selecciona un viaje para confirmar recepción</div>
@@ -1085,34 +1085,20 @@ function renderViajesList(){
   g('trp-stat-jabas').textContent=totalJabas;
   g('trp-count-label').textContent='— '+hoy.length+' registrados';
   if(!hoy.length){g('trp-viajes-list').innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div>';return;}
-  // Sort: transito → enviado → recibido
-  const ordenEstado = {transito:0, enviado:1, recibido:2};
-  hoy.sort((a,b)=>(ordenEstado[a.estado]||0)-(ordenEstado[b.estado]||0));
-
   g('trp-viajes-list').innerHTML=hoy.map(v=>{
     const dif=v.totalRec!==null?v.totalRec-v.totalEnv:null;
-    let badge='';
-    if(v.estado==='transito')       badge='<span class="badge badge-transit">En tránsito</span>';
-    else if(v.estado==='enviado')   badge='<span class="badge badge-rol">Enviado</span>';
-    else if(dif===0)                badge='<span class="badge badge-received">Recibido</span>';
-    else                            badge='<span class="badge badge-diff">Recibido · Dif: '+(dif>0?'+':'')+dif+'</span>';
-
-    let syncBtn='';
-    if(v.estado==='transito'){
-      syncBtn=`<button onclick="enviarGuia(${v.id},event)" style="font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);margin-top:6px">↑ Exportar guía a recepción</button>`;
-    } else if(v.estado==='enviado'){
-      syncBtn=`<span style="font-size:10px;color:var(--blue)">📤 Exportado — pendiente recepción</span>`;
-    } else {
-      syncBtn=`<span style="font-size:10px;color:var(--green)">✓ Recibido en packing${v.totalRec!==null?' · '+v.totalRec+' jabas':''}</span>`;
-    }
-    return `<div class="viaje-card" style="${v.estado==='recibido'?'opacity:.7':''}">
+    const badge=v.estado==='transito'?'<span class="badge badge-transit">En tránsito</span>':dif===0?'<span class="badge badge-received">Sin diferencia</span>':'<span class="badge badge-diff">Dif: '+(dif>0?'+':'')+dif+'</span>';
+    const syncBtn=v.estado==='transito'
+      ?`<button onclick="enviarGuia(${v.id},event)" style="font-size:11px;padding:4px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);margin-top:6px">↑ Enviar a recepción</button>`
+      :`<span style="font-size:10px;color:var(--green)">✓ Enviado</span>`;
+    return `<div class="viaje-card">
       <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
       <div class="viaje-meta">
         <span>${v.chofer}</span><span>${v.tipo}</span>
         <span>Carga: ${v.hcarga}</span><span>Salida: ${v.hsalida}</span><span>Llegada: ${v.hllegada}</span>
         <span>Enviadas: ${v.totalEnv}${v.totalRec!==null?' · Recibidas: '+v.totalRec:''}</span>
       </div>
-      <div style="margin-top:4px">${syncBtn}</div>
+      <div>${syncBtn}</div>
     </div>`;
   }).join('');
 }
@@ -1191,31 +1177,25 @@ function renderRecList(){
   const viajes=loadData('viajes');
   const today=new Date().toLocaleDateString('es-PE');
   const hoy=viajes.filter(v=>v.fecha===today);
-  const enviados=hoy.filter(v=>v.estado==='enviado');
-  const recibidos=hoy.filter(v=>v.estado==='recibido');
-  g('rec-stat-transit').textContent=enviados.length;
+  const transito=hoy.filter(v=>v.estado==='transito');
+  const recibidos=hoy.filter(v=>v.estado!=='transito');
+  g('rec-stat-transit').textContent=transito.length;
   g('rec-stat-rec').textContent=recibidos.length;
-  const enviados = hoy.filter(v=>v.estado==='enviado');
-  const recibidos2 = hoy.filter(v=>v.estado==='recibido');
+  if(!hoy.length){g('rec-viajes-list').innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes hoy.</div>';return;}
   const html=[
-    enviados.length?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.4px">Pendientes de recepción</div>':'',
-    ...enviados.map(v=>recCard(v)),
-    recibidos2.length?'<div style="font-size:11px;color:var(--text3);margin:12px 0 6px;font-weight:500;text-transform:uppercase;letter-spacing:.4px">Recepcionados</div>':'',
-    ...recibidos2.map(v=>recCard(v)),
-    (!enviados.length&&!recibidos2.length)?'<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin guías. Toca "Actualizar" para recibir del transportista.</div>':''
+    transito.length?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500">EN TRÁNSITO</div>':'',
+    ...transito.map(v=>recCard(v)),
+    recibidos.length?'<div style="font-size:11px;color:var(--text3);margin:12px 0 6px;font-weight:500">RECIBIDOS HOY</div>':'',
+    ...recibidos.map(v=>recCard(v))
   ].join('');
   g('rec-viajes-list').innerHTML=html;
 }
 
 function recCard(v){
   const dif=v.totalRec!==null?v.totalRec-v.totalEnv:null;
-  let badge='';
-  if(v.estado==='enviado')      badge='<span class="badge badge-transit">Pendiente</span>';
-  else if(dif===0)              badge='<span class="badge badge-received">Recepcionado</span>';
-  else                          badge='<span class="badge badge-diff">Recepcionado · Dif:'+(dif>0?'+':'')+dif+'</span>';
+  const badge=v.estado==='transito'?'<span class="badge badge-transit">En tránsito</span>':dif===0?'<span class="badge badge-received">Sin diferencia</span>':'<span class="badge badge-diff">Dif: '+(dif>0?'+':'')+dif+'</span>';
   const sel=selectedViajeId===v.id?' selected':'';
-  const opacity=v.estado==='recibido'?'opacity:.7;':'';
-  return `<div class="viaje-card${sel}" onclick="selectViaje(${v.id})" style="${opacity}">
+  return `<div class="viaje-card${sel}" onclick="selectViaje(${v.id})">
     <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
     <div class="viaje-meta"><span>${v.chofer}</span><span>${v.tipo}</span><span>Salida: ${v.hsalida}</span><span>Llegada: ${v.hllegada}</span></div>
   </div>`;
@@ -1230,7 +1210,7 @@ function selectViaje(id){
   g('rec-detail-empty').style.display='none';
   g('rec-detail-content').style.display='block';
   g('rec-detail-title').textContent='Detalle — '+v.guia;
-  const confirmado=v.estado==='recibido';
+  const confirmado=v.estado!=='transito';
   g('rec-info-rows').innerHTML=`
     <div class="rec-info-row"><span class="rec-info-label">N° guía</span><span class="rec-info-val">${v.guia}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Transportista</span><span class="rec-info-val">${v.chofer}</span></div>
@@ -1386,10 +1366,7 @@ async function enviarGuia(id, event){
   try{
     const res=await jsonp({action:'pushViaje',viaje:JSON.stringify(v)});
     if(res&&res.ok){
-      // Update local estado to 'enviado'
-      const idx=viajes.findIndex(x=>x.id===id);
-      if(idx!==-1){ viajes[idx].estado='enviado'; saveData('viajes',viajes); }
-      toast('Guía '+v.guia+' exportada a recepción.','ok');
+      toast('Guía '+v.guia+' enviada a recepción.','ok');
       renderViajesList();
     }else{
       toast('Error al enviar: '+(res.error||'desconocido'),true);
@@ -1427,8 +1404,8 @@ async function actualizarRecepcion(){
         const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
         if(localIdx===-1){local.unshift(cloudV);added++;}
         else{
-          // Always update from cloud — cloud is source of truth
-          local[localIdx]=Object.assign(local[localIdx],cloudV);
+          // Update estado and recepcion data from cloud
+          if(cloudV.estado!=='transito'){local[localIdx]=Object.assign(local[localIdx],cloudV);}
           updated++;
         }
       });
@@ -1443,30 +1420,15 @@ async function actualizarRecepcion(){
 }
 
 async function sincronizarRecepcionConfirmada(viaje){
-  // Update local transport viajes estado to 'recibido'
-  const viajesLocal = loadData('viajes');
-  const idx = viajesLocal.findIndex(v=>String(v.id)===String(viaje.id));
-  if(idx!==-1){
-    viajesLocal[idx] = Object.assign(viajesLocal[idx], {
-      estado:'recibido',
-      totalRec:viaje.totalRec,
-      descInicio:viaje.descInicio,
-      descFin:viaje.descFin,
-      obs:viaje.obs,
-      lotes:viaje.lotes
-    });
-    saveData('viajes', viajesLocal);
-    renderViajesList(); // refresh transport list
-  }
-  // Push to cloud
-  const online = await checkSyncStatus();
-  if(!online) return;
+  // After confirming reception, push updated state to cloud
+  const online=await checkSyncStatus();
+  if(!online)return; // local already saved, will sync later
   try{
     await jsonp({
       action:'updateViaje',
       guia:viaje.guia,
       data:JSON.stringify({
-        estado:'recibido',
+        estado:viaje.estado,
         totalRec:viaje.totalRec,
         descInicio:viaje.descInicio,
         descFin:viaje.descFin,
@@ -1474,7 +1436,7 @@ async function sincronizarRecepcionConfirmada(viaje){
         lotes:viaje.lotes
       })
     });
-  }catch(e){/* silent fail */}
+  }catch(e){/* silent fail — local already saved */}
 }
 
 // ═══════════════════════════════════════
