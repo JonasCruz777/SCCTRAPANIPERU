@@ -1420,7 +1420,9 @@ async function enviarGuia(id, event){
   const btn=event?event.target:null;
   if(btn){btn.textContent='Enviando...';btn.disabled=true;}
   try{
-    const res=await jsonp({action:'pushViaje',viaje:JSON.stringify(v)});
+    // Push with estado='enviado' to Sheet regardless of local estado
+    const vParaSheet = Object.assign({}, v, {estado:'enviado'});
+    const res=await jsonp({action:'pushViaje',viaje:JSON.stringify(vParaSheet)});
     if(res&&res.ok){
       // Update local estado to 'enviado'
       const idx=viajes.findIndex(x=>x.id===id);
