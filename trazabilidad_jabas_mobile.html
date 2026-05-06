@@ -1108,7 +1108,7 @@ function renderViajesList(){
   g('trp-stat-jabas').textContent=totalJabas;
   g('trp-count-label').textContent='— '+hoy.length+' registrados';
   if(!hoy.length){g('trp-viajes-list').innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div>';return;}
-  // Sort: transito → enviado → recibido
+  // Sort: transito first, enviado second, recibido last
   const ordenEstado = {transito:0, enviado:1, recibido:2};
   hoy.sort((a,b)=>(ordenEstado[a.estado]||0)-(ordenEstado[b.estado]||0));
 
@@ -1213,7 +1213,8 @@ function exportarReportes(){
 function renderRecList(){
   const viajes=loadData('viajes');
   const today=new Date().toLocaleDateString('es-PE');
-  const hoy=viajes.filter(v=>v.fecha===today);
+  // Recepcion only sees 'enviado' and 'recibido' — never 'transito'
+  const hoy=viajes.filter(v=>v.fecha===today && (v.estado==='enviado'||v.estado==='recibido'));
   const enviados=hoy.filter(v=>v.estado==='enviado');
   const recibidos=hoy.filter(v=>v.estado==='recibido');
   g('rec-stat-transit').textContent=enviados.length;
@@ -1439,6 +1440,8 @@ async function actualizarRecepcion(){
       const localIds=new Set(local.map(v=>String(v.id)));
       let added=0,updated=0;
       res.rows.forEach(cloudV=>{
+        // Only process enviado or recibido from cloud
+        if(cloudV.estado==='transito') return;
         // Parse lotes if string
         if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
         // Convert numeric strings
@@ -1446,9 +1449,11 @@ async function actualizarRecepcion(){
         cloudV.totalRec=cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined?parseInt(cloudV.totalRec):null;
         cloudV.id=parseInt(cloudV.id)||cloudV.id;
         const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
-        if(localIdx===-1){local.unshift(cloudV);added++;}
-        else{
-          // Always update from cloud — cloud is source of truth
+        if(localIdx===-1){
+          // Only add if it was exported (enviado) — not a local-only transito
+          local.unshift(cloudV); added++;
+        } else {
+          // Update local with cloud state (enviado → recibido updates)
           local[localIdx]=Object.assign(local[localIdx],cloudV);
           updated++;
         }
