@@ -1478,9 +1478,11 @@ async function actualizarRecepcion(){
           }catch(e){}
         }
         if(localIdx===-1){
-          local.unshift(cloudV); added++;
+          if((ESTADO_PRIORITY[cloudV.estado]||0) >= 1) { local.unshift(cloudV); added++; }
         } else {
-          local[localIdx]=Object.assign(local[localIdx],cloudV);
+          const lp = ESTADO_PRIORITY[local[localIdx].estado]||0;
+          const cp = ESTADO_PRIORITY[cloudV.estado]||0;
+          if(cp >= lp){ local[localIdx]=Object.assign(local[localIdx],cloudV); }
           updated++;
         }
       });
@@ -1532,10 +1534,12 @@ async function sincronizarRecepcionConfirmada(viaje){
 // ═══════════════════════════════════════
 //  AUTO SYNC & LIMPIEZA
 // ═══════════════════════════════════════
+// Estado priority: recepcionado > recibido > enviado > transito
+const ESTADO_PRIORITY = {transito:0, enviado:1, recibido:2, recepcionado:3};
+
 async function autoSyncViajes(){
-  // Check online silently
   const online = await checkSyncStatus();
-  if(!online) return; // offline — use local as-is
+  if(!online) return;
 
   try{
     const res = await jsonp({action:'getViajes', estado:''});
@@ -1545,7 +1549,47 @@ async function autoSyncViajes(){
     const todayISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
     const todayLocal = now.toLocaleDateString('es-PE');
 
-    // If Sheet is empty → clear local viajes
+    // Parse cloud rows
+    const sheetRows = res.rows.map(cloudV => {
+      // Normalize fechaISO
+      if(!cloudV.fechaISO && cloudV.fecha){
+        try{
+          const p = cloudV.fecha.split('/');
+          if(p.length===3) cloudV.fechaISO = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+        }catch(e){}
+      }
+      if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
+      cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
+      cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
+        ? parseInt(cloudV.totalRec) : null;
+      return cloudV;
+    }).filter(v => v.fechaISO===todayISO || v.fecha===todayLocal);
+
+    // Load local
+    const local = loadData('viajes');
+
+    // Merge strategy: local estado wins if it's more advanced than Sheet
+    const merged = [...local]; // start with all local
+
+    sheetRows.forEach(cloudV => {
+      const localIdx = merged.findIndex(v => String(v.id)===String(cloudV.id));
+      if(localIdx === -1){
+        // New from Sheet — only add if enviado or higher (not transito)
+        if((ESTADO_PRIORITY[cloudV.estado]||0) >= 1){
+          merged.push(cloudV);
+        }
+      } else {
+        const localPriority = ESTADO_PRIORITY[merged[localIdx].estado]||0;
+        const cloudPriority = ESTADO_PRIORITY[cloudV.estado]||0;
+        // Only update if Sheet has HIGHER or EQUAL priority state
+        if(cloudPriority >= localPriority){
+          merged[localIdx] = Object.assign(merged[localIdx], cloudV);
+        }
+        // If local is more advanced (e.g. local=enviado, sheet=transito) → keep local
+      }
+    });
+
+    // If Sheet is completely empty, clear local viajes too
     if(res.rows.length === 0){
       saveData('viajes', []);
       renderViajesList();
@@ -1553,42 +1597,11 @@ async function autoSyncViajes(){
       return;
     }
 
-    // Filter only today's viajes from Sheet
-    const sheetHoy = res.rows.filter(v => {
-      if(!v.fechaISO && v.fecha){
-        try{
-          const p = v.fecha.split('/');
-          if(p.length===3) v.fechaISO = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
-        }catch(e){}
-      }
-      return v.fechaISO===todayISO || v.fecha===todayLocal;
-    });
-
-    // Parse each cloud viaje
-    sheetHoy.forEach(cloudV => {
-      if(cloudV.estado==='transito') return;
-      if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
-      cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
-      cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
-        ? parseInt(cloudV.totalRec) : null;
-    });
-
-    // Merge with local: keep local 'transito' viajes + update rest from Sheet
-    const local = loadData('viajes');
-    const localTransito = local.filter(v => v.estado==='transito'); // keep unexported
-    const merged = [...localTransito];
-
-    sheetHoy.forEach(cloudV => {
-      const exists = merged.findIndex(v => String(v.id)===String(cloudV.id));
-      if(exists===-1) merged.push(cloudV);
-      else merged[exists] = Object.assign(merged[exists], cloudV);
-    });
-
     saveData('viajes', merged);
     renderViajesList();
     renderRecList();
   }catch(e){
-    // silent fail — keep using local
+    // silent fail
   }
 }
 
