@@ -2,12 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#0f1117"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Trazabilidad — Mobile</title>
+<title>Trazabilidad de Jabas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -224,25 +220,6 @@ tr:hover td{background:var(--bg3)}
   .mod-tab span { display: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
 }
-
-/* MOBILE FORCED LAYOUT */
-.trp-layout,#trp-pane-nuevo{grid-template-columns:1fr !important}
-#mod-cfg,#mod-trp,#mod-rec{flex-direction:column}
-.trp-panel,.rec-panel{border-right:none !important;border-bottom:1px solid var(--border)}
-.cfg-sidebar{width:100% !important;height:50px !important;border-right:none !important;border-top:1px solid var(--border) !important;order:2 !important;display:flex !important;overflow-x:auto !important}
-.cfg-main{order:1 !important}
-.cfg-sidebar .nav-item{flex-direction:column !important;padding:4px 12px !important;font-size:10px !important;gap:2px !important;white-space:nowrap !important;border-left:none !important;border-top:2px solid transparent !important;justify-content:center !important}
-.cfg-sidebar .nav-item.active{border-top-color:var(--blue) !important;border-left-color:transparent !important}
-.cfg-sidebar .nav-item svg{width:18px !important;height:18px !important}
-.fg,.fg3{grid-template-columns:1fr !important}
-.modal-bg{padding:0 !important;align-items:flex-end !important}
-.modal{border-radius:var(--radius-lg) var(--radius-lg) 0 0 !important;max-height:92vh !important}
-.modal-body{max-height:60vh !important}
-.btn{min-height:44px}
-.act-btn{min-height:36px;padding:6px 10px !important;font-size:12px !important}
-.module{height:calc(100vh - 44px) !important}
-.topbar-brand{display:none !important}
-.mod-tab{height:44px !important;font-size:11px !important}
 </style>
 </head>
 <body>
