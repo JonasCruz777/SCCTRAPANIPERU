@@ -552,8 +552,8 @@ function showModule(id, el){
   document.querySelectorAll('.mod-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('mod-'+id).classList.add('active');
   el.classList.add('active');
-  if(id==='trp'){ refreshTrpSelects(); renderViajesList(); autoSyncViajes(); }
-  if(id==='rec'){ renderRecList(); autoSyncViajes(); }
+  if(id==='trp'){ refreshTrpSelects(); renderViajesList(); checkSyncStatus(); }
+  if(id==='rec'){ renderRecList(); checkSyncStatus(); }
 }
 
 // ═══════════════════════════════════════
@@ -1421,7 +1421,7 @@ async function actualizarRecepcion(){
   if(btn){btn.textContent='Actualizando...';btn.disabled=true;}
   const online=await checkSyncStatus();
   if(!online){
-    toast('Sin conexión. Usando datos locales.',true);
+    toast('Sin conexión. No se puede actualizar.',true);
     if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
     return;
   }
@@ -1583,15 +1583,11 @@ async function autoSyncViajes(){
 }
 
 function limpiarViajesLocal(from){
-  const msg = from==='trp'
-    ? '¿Limpiar los viajes locales? Se mantendrán solo los que estén en el Sheet.'
-    : '¿Limpiar los viajes locales de recepción? Se mantendrán solo los del Sheet.';
-  if(!confirm(msg)) return;
+  if(!confirm('¿Limpiar todos los viajes del local? Esta acción no afecta el Sheet.')) return;
   saveData('viajes', []);
   renderViajesList();
   renderRecList();
-  toast('Datos locales limpiados. Sincronizando con Sheet...','ok');
-  setTimeout(()=>autoSyncViajes(), 500);
+  toast('Datos locales limpiados.','ok');
 }
 
 // ═══════════════════════════════════════
