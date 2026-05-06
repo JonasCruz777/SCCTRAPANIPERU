@@ -1086,7 +1086,7 @@ function renderViajesList(){
   g('trp-count-label').textContent='— '+hoy.length+' registrados';
   if(!hoy.length){g('trp-viajes-list').innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div>';return;}
   // Sort: transito first, enviado second, recibido last
-  const ordenEstado = {transito:0, enviado:1, recibido:2};
+  const ordenEstado = {transito:0, enviado:1, recepcionado:2};
   hoy.sort((a,b)=>(ordenEstado[a.estado]||0)-(ordenEstado[b.estado]||0));
 
   g('trp-viajes-list').innerHTML=hoy.map(v=>{
@@ -1103,9 +1103,9 @@ function renderViajesList(){
     } else if(v.estado==='enviado'){
       syncBtn=`<span style="font-size:10px;color:var(--blue)">📤 Exportado — pendiente recepción</span>`;
     } else {
-      syncBtn=`<span style="font-size:10px;color:var(--green)">✓ Recibido en packing${v.totalRec!==null?' · '+v.totalRec+' jabas':''}</span>`;
+      syncBtn=`<span style="font-size:10px;color:var(--green)">✓ Recepcionado${v.totalRec!==null?' · '+v.totalRec+' jabas':''}</span>`;
     }
-    return `<div class="viaje-card" style="${v.estado==='recibido'?'opacity:.7':''}">
+    return `<div class="viaje-card" style="${v.estado==='recepcionado'?'opacity:.7':'"}>
       <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
       <div class="viaje-meta">
         <span>${v.chofer}</span><span>${v.tipo}</span>
@@ -1190,10 +1190,10 @@ function exportarReportes(){
 function renderRecList(){
   const viajes=loadData('viajes');
   const today=new Date().toLocaleDateString('es-PE');
-  // Recepcion only sees 'enviado' and 'recibido' — never 'transito'
-  const hoy=viajes.filter(v=>v.fecha===today && (v.estado==='enviado'||v.estado==='recibido'));
+  // Recepcion only sees 'enviado' and 'recepcionado' — never 'transito'
+  const hoy=viajes.filter(v=>v.fecha===today && (v.estado==='enviado'||v.estado==='recepcionado'));
   const enviados=hoy.filter(v=>v.estado==='enviado');
-  const recibidos=hoy.filter(v=>v.estado==='recibido');
+  const recibidos=hoy.filter(v=>v.estado==='recepcionado');
   g('rec-stat-transit').textContent=enviados.length;
   g('rec-stat-rec').textContent=recibidos.length;
   const html=[
@@ -1211,7 +1211,7 @@ function recCard(v){
   let badge='';
   if(v.estado==='enviado')      badge='<span class="badge badge-transit">Pendiente</span>';
   else if(dif===0)              badge='<span class="badge badge-received">Recepcionado</span>';
-  else                          badge='<span class="badge badge-diff">Recepcionado · Dif:'+(dif>0?'+':'')+dif+'</span>';
+  else                          badge='<span class="badge badge-diff">Recepcionado · Dif: '+(dif>0?'+':'')+dif+'</span>';
   const sel=selectedViajeId===v.id?' selected':'';
   const opacity=v.estado==='recibido'?'opacity:.7;':'';
   return `<div class="viaje-card${sel}" onclick="selectViaje(${v.id})" style="${opacity}">
@@ -1229,7 +1229,7 @@ function selectViaje(id){
   g('rec-detail-empty').style.display='none';
   g('rec-detail-content').style.display='block';
   g('rec-detail-title').textContent='Detalle — '+v.guia;
-  const confirmado=v.estado==='recibido';
+  const confirmado=(v.estado==='recepcionado');
   g('rec-info-rows').innerHTML=`
     <div class="rec-info-row"><span class="rec-info-label">N° guía</span><span class="rec-info-val">${v.guia}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Transportista</span><span class="rec-info-val">${v.chofer}</span></div>
@@ -1310,7 +1310,7 @@ function confirmarRecepcion(){
   });
   if(!ok){toast('Ingresa las jabas recibidas en todos los lotes.',true);return;}
   v.totalRec=totalRec;
-  v.estado='recibido';
+  v.estado='recepcionado';
   v.descInicio=g('rec-desc-inicio').value||'';
   v.descFin=g('rec-desc-fin').value||'';
   v.obs=g('rec-obs').value||'';
@@ -1418,7 +1418,7 @@ async function actualizarRecepcion(){
       let added=0,updated=0;
       res.rows.forEach(cloudV=>{
         // Only process enviado or recibido from cloud
-        if(cloudV.estado==='transito') return;
+        if(cloudV.estado==='transito') return; // skip, never show transito in recepcion
         // Parse lotes if string
         if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
         // Convert numeric strings
@@ -1446,12 +1446,12 @@ async function actualizarRecepcion(){
 }
 
 async function sincronizarRecepcionConfirmada(viaje){
-  // Update local transport viajes estado to 'recibido'
+  // Update local transport viajes estado to 'recepcionado'
   const viajesLocal = loadData('viajes');
   const idx = viajesLocal.findIndex(v=>String(v.id)===String(viaje.id));
   if(idx!==-1){
     viajesLocal[idx] = Object.assign(viajesLocal[idx], {
-      estado:'recibido',
+      estado:'recepcionado',
       totalRec:viaje.totalRec,
       descInicio:viaje.descInicio,
       descFin:viaje.descFin,
@@ -1469,7 +1469,7 @@ async function sincronizarRecepcionConfirmada(viaje){
       action:'updateViaje',
       guia:viaje.guia,
       data:JSON.stringify({
-        estado:'recibido',
+        estado:'recepcionado',
         totalRec:viaje.totalRec,
         descInicio:viaje.descInicio,
         descFin:viaje.descFin,
