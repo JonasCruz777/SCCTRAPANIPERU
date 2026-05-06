@@ -379,6 +379,10 @@ tr:hover td{background:var(--bg3)}
         <div class="stat-card"><span>Jabas enviadas</span><strong id="trp-stat-jabas">0</strong></div>
       </div>
       <div id="trp-viajes-list"><div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <button class="btn" onclick="exportarViajes()">↓ Exportar día</button>
+        <button class="btn" style="color:var(--red);border-color:var(--red-border)" onclick="limpiarViajesLocal('trp')">✕ Limpiar local</button>
+      </div>
     </div>
   </div>
 
@@ -430,7 +434,10 @@ tr:hover td{background:var(--bg3)}
   <div class="rec-panel">
     <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
       <span>Pendientes de recepción</span>
-      <button onclick="actualizarRecepcion()" style="font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Actualizar</button>
+      <div style="display:flex;gap:6px">
+        <button onclick="actualizarRecepcion()" style="font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Actualizar</button>
+        <button onclick="limpiarViajesLocal('rec')" style="font-size:12px;padding:6px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--red-border);background:transparent;color:var(--red)">✕</button>
+      </div>
     </div>
     <div class="stats-grid">
       <div class="stat-card warn"><span>Pendientes</span><strong id="rec-stat-transit">0</strong></div>
@@ -545,8 +552,8 @@ function showModule(id, el){
   document.querySelectorAll('.mod-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('mod-'+id).classList.add('active');
   el.classList.add('active');
-  if(id==='trp'){ refreshTrpSelects(); renderViajesList(); checkSyncStatus(); }
-  if(id==='rec'){ renderRecList(); checkSyncStatus(); }
+  if(id==='trp'){ refreshTrpSelects(); renderViajesList(); autoSyncViajes(); }
+  if(id==='rec'){ renderRecList(); autoSyncViajes(); }
 }
 
 // ═══════════════════════════════════════
@@ -1495,6 +1502,81 @@ async function sincronizarRecepcionConfirmada(viaje){
       })
     });
   }catch(e){/* silent fail */}
+}
+
+// ═══════════════════════════════════════
+//  AUTO SYNC & LIMPIEZA
+// ═══════════════════════════════════════
+async function autoSyncViajes(){
+  // Check online silently
+  const online = await checkSyncStatus();
+  if(!online) return; // offline — use local as-is
+
+  try{
+    const res = await jsonp({action:'getViajes', estado:''});
+    if(!res || !res.ok || !res.rows) return;
+
+    const now = new Date();
+    const todayISO = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    const todayLocal = now.toLocaleDateString('es-PE');
+
+    // If Sheet is empty → clear local viajes
+    if(res.rows.length === 0){
+      saveData('viajes', []);
+      renderViajesList();
+      renderRecList();
+      return;
+    }
+
+    // Filter only today's viajes from Sheet
+    const sheetHoy = res.rows.filter(v => {
+      if(!v.fechaISO && v.fecha){
+        try{
+          const p = v.fecha.split('/');
+          if(p.length===3) v.fechaISO = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+        }catch(e){}
+      }
+      return v.fechaISO===todayISO || v.fecha===todayLocal;
+    });
+
+    // Parse each cloud viaje
+    sheetHoy.forEach(cloudV => {
+      if(cloudV.estado==='transito') return;
+      if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
+      cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
+      cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
+        ? parseInt(cloudV.totalRec) : null;
+    });
+
+    // Merge with local: keep local 'transito' viajes + update rest from Sheet
+    const local = loadData('viajes');
+    const localTransito = local.filter(v => v.estado==='transito'); // keep unexported
+    const merged = [...localTransito];
+
+    sheetHoy.forEach(cloudV => {
+      const exists = merged.findIndex(v => String(v.id)===String(cloudV.id));
+      if(exists===-1) merged.push(cloudV);
+      else merged[exists] = Object.assign(merged[exists], cloudV);
+    });
+
+    saveData('viajes', merged);
+    renderViajesList();
+    renderRecList();
+  }catch(e){
+    // silent fail — keep using local
+  }
+}
+
+function limpiarViajesLocal(from){
+  const msg = from==='trp'
+    ? '¿Limpiar los viajes locales? Se mantendrán solo los que estén en el Sheet.'
+    : '¿Limpiar los viajes locales de recepción? Se mantendrán solo los del Sheet.';
+  if(!confirm(msg)) return;
+  saveData('viajes', []);
+  renderViajesList();
+  renderRecList();
+  toast('Datos locales limpiados. Sincronizando con Sheet...','ok');
+  setTimeout(()=>autoSyncViajes(), 500);
 }
 
 // ═══════════════════════════════════════
