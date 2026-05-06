@@ -1241,6 +1241,11 @@ function selectViaje(id){
   const v=viajes.find(x=>x.id===id);
   if(!v)return;
   g('rec-detail-empty').style.display='none';
+  // En móvil, hacer scroll al detalle que está debajo de la lista
+  setTimeout(()=>{
+    const det=g('rec-detail-content');
+    if(det) det.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
   g('rec-detail-content').style.display='block';
   g('rec-detail-title').textContent='Detalle — '+v.guia;
   const confirmado=(v.estado==='recepcionado');

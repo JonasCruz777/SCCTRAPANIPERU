@@ -228,7 +228,7 @@ tr:hover td{background:var(--bg3)}
 /* MOBILE FORCED LAYOUT */
 .trp-layout,#trp-pane-nuevo{grid-template-columns:1fr !important}
 #mod-cfg,#mod-trp,#mod-rec{flex-direction:column}
-.trp-panel,.rec-panel{border-right:none !important;border-bottom:1px solid var(--border)}
+.trp-panel,.rec-panel{border-right:none !important;border-bottom:1px solid var(--border);overflow-y:auto}
 .cfg-sidebar{width:100% !important;height:50px !important;border-right:none !important;border-top:1px solid var(--border) !important;order:2 !important;display:flex !important;overflow-x:auto !important}
 .cfg-main{order:1 !important}
 .cfg-sidebar .nav-item{flex-direction:column !important;padding:4px 12px !important;font-size:10px !important;gap:2px !important;white-space:nowrap !important;border-left:none !important;border-top:2px solid transparent !important;justify-content:center !important}
@@ -1264,6 +1264,11 @@ function selectViaje(id){
   const v=viajes.find(x=>x.id===id);
   if(!v)return;
   g('rec-detail-empty').style.display='none';
+  // En móvil, hacer scroll al detalle que está debajo de la lista
+  setTimeout(()=>{
+    const det=g('rec-detail-content');
+    if(det) det.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
   g('rec-detail-content').style.display='block';
   g('rec-detail-title').textContent='Detalle — '+v.guia;
   const confirmado=(v.estado==='recepcionado');
