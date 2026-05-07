@@ -1109,7 +1109,7 @@ function renderViajesList(){
 
     let syncBtn='';
     if(v.estado==='transito'){
-      syncBtn=`<button onclick="enviarGuia(${v.id},event)" style="font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);margin-top:6px">↑ Exportar guía a recepción</button>`;
+      syncBtn=`<button onclick="enviarGuia('${v.id}',event)" style="font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);margin-top:6px">↑ Exportar guía a recepción</button>`;
     } else if(v.estado==='enviado'){
       syncBtn=`<span style="font-size:10px;color:var(--blue)">📤 Exportado — pendiente recepción</span>`;
     } else {
@@ -1229,7 +1229,7 @@ function recCard(v){
   else                               badge='<span class="badge badge-diff">Recepcionado · Dif: '+(dif>0?'+':'')+dif+'</span>';
   const sel=selectedViajeId===v.id?' selected':'';
   const opacity=(v.estado==='recibido'||v.estado==='recepcionado')?'opacity:.7;':'';
-  return `<div class="viaje-card${sel}" onclick="selectViaje(${v.id})" style="${opacity}">
+  return `<div class="viaje-card${sel}" onclick="selectViaje('${v.id}')" style="${opacity}">
     <div class="viaje-top"><span class="viaje-guia">${v.guia}</span>${badge}</div>
     <div class="viaje-meta"><span>${v.chofer}</span><span>${v.tipo}</span><span>Salida: ${v.hsalida}</span><span>Llegada: ${v.hllegada}</span></div>
   </div>`;
@@ -1239,7 +1239,7 @@ function selectViaje(id){
   selectedViajeId=id;
   renderRecList();
   const viajes=loadData('viajes');
-  const v=viajes.find(x=>x.id===id);
+  const v=viajes.find(x=>String(x.id)===String(id));
   if(!v)return;
   g('rec-detail-empty').style.display='none';
   // En móvil, hacer scroll al detalle que está debajo de la lista
@@ -1318,7 +1318,7 @@ function checkRecDiff(){
 
 function confirmarRecepcion(){
   const viajes=loadData('viajes');
-  const idx=viajes.findIndex(x=>x.id===selectedViajeId);
+  const idx=viajes.findIndex(x=>String(x.id)===String(selectedViajeId));
   if(idx===-1)return;
   const v=viajes[idx];
   let totalRec=0,ok=true;
@@ -1396,7 +1396,7 @@ async function checkSyncStatus(){
 async function enviarGuia(id, event){
   if(event)event.stopPropagation();
   const viajes=loadData('viajes');
-  const v=viajes.find(x=>x.id===id);
+  const v=viajes.find(x=>String(x.id)===String(id));
   if(!v){toast('Viaje no encontrado.',true);return;}
   const online=await checkSyncStatus();
   if(!online){toast('Sin conexión. Conéctate a internet para enviar la guía.',true);return;}
