@@ -497,7 +497,7 @@ tr:hover td{background:var(--bg3)}
             <button id="rec-btn-fin" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarDescarga('fin')">● Marcar</button>
           </div>
         </div>
-        <div class="warn-note" id="rec-warn-note">Cuenta las jabas físicamente. El dato de campo se revela al confirmar.</div>
+
         <div id="rec-lotes-inputs"></div>
         <div id="rec-resultado" style="display:none"></div>
         <div class="ff" style="margin-top:10px"><label>Observaciones</label><input type="text" id="rec-obs" placeholder="Incidencias, faltantes, daños..."/></div>
@@ -1324,7 +1324,7 @@ function selectViaje(id){
   }
   g('rec-obs').value=v.obs||'';
   g('rec-obs').disabled=confirmado;
-  g('rec-warn-note').style.display=confirmado?'none':'block';
+
   g('rec-confirm-btn').style.display=confirmado?'none':'block';
   g('rec-problema-btn').style.display=confirmado?'none':'block';
   g('rec-resultado').style.display='none';
@@ -1412,10 +1412,33 @@ function confirmarRecepcion(){
     recPorLote[key]=(recPorLote[key]||0)+val;
     totalRec+=val;
   }
-  // Assign recibidas back to each original lote proportionally (or by lote key)
+  // Distribute recibidas proportionally across original lotes with same key
+  // e.g. 3 lotes of "50" with 50 enviadas each = 150 total enviadas
+  // if recibidas=250, distribute: lote1=83, lote2=83, lote3=84
+  const totalEnvByLote={};
   v.lotes.forEach(l=>{
     const key=String(l.lote);
-    l.recibidas=recPorLote[key]!==undefined?recPorLote[key]:0;
+    totalEnvByLote[key]=(totalEnvByLote[key]||0)+(parseInt(l.enviadas)||0);
+  });
+  const assignedByLote={};
+  v.lotes.forEach(l=>{
+    const key=String(l.lote);
+    const totalRec=recPorLote[key]||0;
+    const totalEnv=totalEnvByLote[key]||1;
+    const ratio=(parseInt(l.enviadas)||0)/totalEnv;
+    const assigned=Math.round(totalRec*ratio);
+    assignedByLote[key]=(assignedByLote[key]||0)+assigned;
+    l.recibidas=assigned;
+  });
+  // Fix rounding: ensure sum of assigned == recibidas per lote group
+  v.lotes.forEach((l,i)=>{
+    const key=String(l.lote);
+    if(i===v.lotes.map(x=>String(x.lote)).lastIndexOf(key)){
+      // Last lote of this group — fix rounding difference
+      const sumSoFar=v.lotes.filter((x,j)=>String(x.lote)===key&&j<=i).reduce((a,x)=>a+(x.recibidas||0),0);
+      const expected=recPorLote[key]||0;
+      l.recibidas+=(expected-sumSoFar);
+    }
   });
   if(!ok){toast('Ingresa las jabas recibidas en todos los lotes.',true);return;}
   // Validar hora inicio y fin de descarga
