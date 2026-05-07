@@ -479,9 +479,23 @@ tr:hover td{background:var(--bg3)}
       <div class="rec-detail" id="rec-info-rows"></div>
       <div style="margin-top:14px">
         <div class="form-card-title" style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Tiempo de descarga</div>
-        <div class="fg" style="margin-bottom:12px">
-          <div class="ff"><label>Hora inicio</label><input type="time" id="rec-desc-inicio"/></div>
-          <div class="ff"><label>Hora fin</label><input type="time" id="rec-desc-fin"/></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+            <div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Hora inicio</div>
+              <div style="font-size:16px;font-weight:600;color:var(--text);min-width:60px" id="rec-desc-inicio-display">--:--</div>
+              <input type="hidden" id="rec-desc-inicio"/>
+            </div>
+            <button id="rec-btn-inicio" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarDescarga('inicio')">● Marcar</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
+            <div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Hora fin</div>
+              <div style="font-size:16px;font-weight:600;color:var(--text);min-width:60px" id="rec-desc-fin-display">--:--</div>
+              <input type="hidden" id="rec-desc-fin"/>
+            </div>
+            <button id="rec-btn-fin" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarDescarga('fin')">● Marcar</button>
+          </div>
         </div>
         <div class="warn-note" id="rec-warn-note">Cuenta las jabas físicamente. El dato de campo se revela al confirmar.</div>
         <div id="rec-lotes-inputs"></div>
@@ -1287,10 +1301,27 @@ function selectViaje(id){
     <div class="rec-info-row"><span class="rec-info-label">Hora de salida</span><span class="rec-info-val">${v.hsalida}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Hora de llegada</span><span class="rec-info-val">${v.hllegada}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Supervisores / lotes</span><span class="rec-info-val">${v.lotes.map(l=>l.supervisor+' / '+l.lote).join(', ')}</span></div>`;
-  g('rec-desc-inicio').value=v.descInicio||'';
-  g('rec-desc-fin').value=v.descFin||'';
-  g('rec-desc-inicio').disabled=confirmado;
-  g('rec-desc-fin').disabled=confirmado;
+  // Reset descarga buttons first
+  resetDescargaBtns();
+  // Restore state if already marked
+  if(v.descInicio){
+    g('rec-desc-inicio').value=v.descInicio;
+    const d1=g('rec-desc-inicio-display');
+    const b1=g('rec-btn-inicio');
+    if(d1){d1.textContent=v.descInicio;d1.style.color='var(--green)';}
+    if(b1){b1.textContent='✓ '+v.descInicio;b1.style.background='var(--green-bg)';b1.style.color='var(--green)';b1.style.borderColor='var(--green-border)';b1.disabled=confirmado||true;}
+  }
+  if(v.descFin){
+    g('rec-desc-fin').value=v.descFin;
+    const d2=g('rec-desc-fin-display');
+    const b2=g('rec-btn-fin');
+    if(d2){d2.textContent=v.descFin;d2.style.color='var(--green)';}
+    if(b2){b2.textContent='✓ '+v.descFin;b2.style.background='var(--green-bg)';b2.style.color='var(--green)';b2.style.borderColor='var(--green-border)';b2.disabled=true;}
+  }
+  if(confirmado){
+    const b1=g('rec-btn-inicio'),b2=g('rec-btn-fin');
+    if(b1)b1.disabled=true; if(b2)b2.disabled=true;
+  }
   g('rec-obs').value=v.obs||'';
   g('rec-obs').disabled=confirmado;
   g('rec-warn-note').style.display=confirmado?'none':'block';
@@ -1358,6 +1389,11 @@ function confirmarRecepcion(){
     l.recibidas=val; totalRec+=val;
   });
   if(!ok){toast('Ingresa las jabas recibidas en todos los lotes.',true);return;}
+  // Validar hora inicio y fin de descarga
+  const descInicio=g('rec-desc-inicio').value;
+  const descFin=g('rec-desc-fin').value;
+  if(!descInicio){toast('Marca la hora de inicio de descarga.',true);return;}
+  if(!descFin){toast('Marca la hora de fin de descarga.',true);return;}
   v.totalRec=totalRec;
   v.estado='recepcionado';
   v.descInicio=g('rec-desc-inicio').value||'';
@@ -1686,6 +1722,38 @@ function limpiarReportes(){
   saveData('viajes', conservar);
   renderReportes();
   toast('Reportes limpiados.','ok');
+}
+
+function marcarDescarga(tipo){
+  const now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const inp=g('rec-desc-'+tipo);
+  const display=g('rec-desc-'+tipo+'-display');
+  const btn=g('rec-btn-'+tipo);
+  if(inp) inp.value=hh;
+  if(display){ display.textContent=hh; display.style.color='var(--green)'; }
+  if(btn){
+    btn.textContent='✓ '+hh;
+    btn.style.background='var(--green-bg)';
+    btn.style.color='var(--green)';
+    btn.style.borderColor='var(--green-border)';
+    btn.disabled=true;
+  }
+}
+
+function resetDescargaBtns(){
+  ['inicio','fin'].forEach(tipo=>{
+    const display=g('rec-desc-'+tipo+'-display');
+    const btn=g('rec-btn-'+tipo);
+    const inp=g('rec-desc-'+tipo);
+    if(inp) inp.value='';
+    if(display){ display.textContent='--:--'; display.style.color='var(--text)'; }
+    if(btn){
+      btn.textContent='● Marcar';
+      btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; btn.disabled=false;
+      btn.className='btn btn-primary'; btn.style.cssText='padding:8px 14px;font-size:12px';
+    }
+  });
 }
 
 // ═══════════════════════════════════════
