@@ -1268,7 +1268,7 @@ function selectViaje(id){
     <div class="rec-info-row"><span class="rec-info-label">Hora de carga</span><span class="rec-info-val">${v.hcarga}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Hora de salida</span><span class="rec-info-val">${v.hsalida}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Hora de llegada</span><span class="rec-info-val">${v.hllegada}</span></div>
-    <div class="rec-info-row"><span class="rec-info-label">Supervisores / lotes</span><span class="rec-info-val">${v.lotes.map(l=>l.supervisor+' / '+l.lote).join(', ')}</span></div>`;
+    <div class="rec-info-row"><span class="rec-info-label">Lotes</span><span class="rec-info-val">${[...new Set(v.lotes.map(l=>l.lote))].join(', ')}</span></div>`;
   // Reset descarga buttons first
   resetDescargaBtns();
   // Restore state if already marked
@@ -1300,7 +1300,15 @@ function selectViaje(id){
   if(confirmado){
     // Mostrar comparativo completo
     let html='';
+    // Group by lote for display
+    const loteResMap={};
     v.lotes.forEach(l=>{
+      const key=String(l.lote);
+      if(!loteResMap[key]) loteResMap[key]={lote:l.lote,enviadas:0,recibidas:0};
+      loteResMap[key].enviadas  += parseInt(l.enviadas)||0;
+      loteResMap[key].recibidas += parseInt(l.recibidas)||0;
+    });
+    Object.values(loteResMap).forEach(l=>{
       const d=l.recibidas-l.enviadas;
       const color=d<0?'var(--red)':d>0?'var(--amber)':'var(--green)';
       html+=`<div class="lote-rec-item">
@@ -1318,9 +1326,17 @@ function selectViaje(id){
     html+=`<div class="alert-box ${resClass}" style="margin-top:10px">${resMsg}</div>`;
     g('rec-lotes-inputs').innerHTML=html;
   } else {
-    // Entradas ciegas
+    // Entradas ciegas — agrupar por número de lote
+    const loteMap={};
+    v.lotes.forEach(l=>{
+      const key=String(l.lote);
+      if(!loteMap[key]) loteMap[key]={lote:l.lote,enviadas:0};
+      loteMap[key].enviadas+=parseInt(l.enviadas)||0;
+    });
+    const lotesAgrupados=Object.values(loteMap);
+    window._recLotesAgrupados=lotesAgrupados;
     let html='';
-    v.lotes.forEach((l,i)=>{
+    lotesAgrupados.forEach((l,i)=>{
       html+=`<div class="lote-rec-item">
         <div class="lote-rec-head">Lote ${l.lote}</div>
         <div class="ff"><label>Jabas recibidas (cuenta físicamente)</label>
@@ -1332,10 +1348,11 @@ function selectViaje(id){
 }
 
 function checkRecDiff(){
-  const v=loadData('viajes').find(x=>x.id===selectedViajeId);
+  const v=loadData('viajes').find(x=>String(x.id)===String(selectedViajeId));
   if(!v)return;
   let total=0,hasVal=false;
-  v.lotes.forEach((_,i)=>{const inp=g('rec-inp-'+i);if(inp&&inp.value!==''){total+=parseInt(inp.value)||0;hasVal=true;}});
+  const grupos=window._recLotesAgrupados||v.lotes;
+  grupos.forEach((_,i)=>{const inp=g('rec-inp-'+i);if(inp&&inp.value!==''){total+=parseInt(inp.value)||0;hasVal=true;}});
   if(!hasVal){g('rec-resultado').style.display='none';return;}
   const dif=total-v.totalEnv;
   g('rec-resultado').style.display='block';
@@ -1350,11 +1367,23 @@ function confirmarRecepcion(){
   if(idx===-1)return;
   const v=viajes[idx];
   let totalRec=0,ok=true;
-  v.lotes.forEach((l,i)=>{
+  // Use grouped lotes if available
+  const lotesAgrupados=window._recLotesAgrupados||null;
+  const count=lotesAgrupados?lotesAgrupados.length:v.lotes.length;
+  // Read inputs (one per grouped lote)
+  const recPorLote={};
+  for(let i=0;i<count;i++){
     const inp=g('rec-inp-'+i);
     const val=inp?parseInt(inp.value):null;
-    if(val===null||isNaN(val)){ok=false;return;}
-    l.recibidas=val; totalRec+=val;
+    if(val===null||isNaN(val)){ok=false;break;}
+    const key=lotesAgrupados?String(lotesAgrupados[i].lote):String(v.lotes[i].lote);
+    recPorLote[key]=(recPorLote[key]||0)+val;
+    totalRec+=val;
+  }
+  // Assign recibidas back to each original lote proportionally (or by lote key)
+  v.lotes.forEach(l=>{
+    const key=String(l.lote);
+    l.recibidas=recPorLote[key]!==undefined?recPorLote[key]:0;
   });
   if(!ok){toast('Ingresa las jabas recibidas en todos los lotes.',true);return;}
   // Validar hora inicio y fin de descarga
