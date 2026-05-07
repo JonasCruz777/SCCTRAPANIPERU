@@ -1405,7 +1405,7 @@ async function enviarGuia(id, event){
     const res=await jsonp({action:'pushViaje',viaje:JSON.stringify(vParaSheet)});
     if(res&&res.ok){
       // Update local estado to 'enviado'
-      const idx=viajes.findIndex(x=>x.id===id);
+      const idx=viajes.findIndex(x=>String(x.id)===String(id));
       if(idx!==-1){ viajes[idx].estado='enviado'; saveData('viajes',viajes); }
       renderViajesList(); // renderiza con nuevo estado 'enviado'
       toast('Guía '+v.guia+' exportada a recepción.','ok');
