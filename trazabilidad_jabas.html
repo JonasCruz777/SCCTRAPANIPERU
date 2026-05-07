@@ -1204,10 +1204,11 @@ function renderRecList(){
   const todayLocal=now.toLocaleDateString('es-PE');
   // Match by fechaISO or fecha, accept enviado/recibido/recepcionado
   const esHoy=v=>(v.fechaISO===todayISO||v.fecha===todayLocal);
-  const esVisible=v=>v.estado==='enviado'||v.estado==='recibido'||v.estado==='recepcionado';
-  const hoy=viajes.filter(v=>esHoy(v)&&esVisible(v));
-  const enviados=hoy.filter(v=>v.estado==='enviado');
-  const recibidos=hoy.filter(v=>v.estado==='recibido'||v.estado==='recepcionado');
+  // Pendientes (enviado): todas las fechas — no se limita al día
+  // Recepcionadas: solo las de hoy
+  const enviados=viajes.filter(v=>v.estado==='enviado');
+  const recibidos=viajes.filter(v=>(v.estado==='recibido'||v.estado==='recepcionado')&&esHoy(v));
+  const hoy=[...enviados,...recibidos];
   g('rec-stat-transit').textContent=enviados.length;
   g('rec-stat-rec').textContent=recibidos.length;
   const html=[

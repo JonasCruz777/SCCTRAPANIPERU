@@ -229,6 +229,9 @@ tr:hover td{background:var(--bg3)}
 .trp-layout,#trp-pane-nuevo{grid-template-columns:1fr !important}
 #mod-cfg,#mod-trp,#mod-rec{flex-direction:column}
 .trp-panel,.rec-panel{border-right:none !important;border-bottom:1px solid var(--border);overflow-y:auto}
+.rec-panel{flex-shrink:0}
+.rec-panel.hidden-mobile{display:none !important}
+.rec-back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--blue);background:none;border:none;cursor:pointer;padding:0 0 12px;margin-bottom:4px}
 .cfg-sidebar{width:100% !important;height:50px !important;border-right:none !important;border-top:1px solid var(--border) !important;order:2 !important;display:flex !important;overflow-x:auto !important}
 .cfg-main{order:1 !important}
 .cfg-sidebar .nav-item{flex-direction:column !important;padding:4px 12px !important;font-size:10px !important;gap:2px !important;white-space:nowrap !important;border-left:none !important;border-top:2px solid transparent !important;justify-content:center !important}
@@ -474,6 +477,7 @@ tr:hover td{background:var(--bg3)}
       Selecciona un viaje de la lista para ver el detalle y confirmar recepción.
     </div>
     <div id="rec-detail-content" style="display:none">
+      <button class="rec-back-btn" id="rec-back-btn" onclick="recVolverLista()" style="display:none">← Volver a guías</button>
       <div class="panel-title" id="rec-detail-title">Detalle del viaje</div>
       <div class="rec-detail" id="rec-info-rows"></div>
       <div style="margin-top:14px">
@@ -1227,10 +1231,11 @@ function renderRecList(){
   const todayLocal=now.toLocaleDateString('es-PE');
   // Match by fechaISO or fecha, accept enviado/recibido/recepcionado
   const esHoy=v=>(v.fechaISO===todayISO||v.fecha===todayLocal);
-  const esVisible=v=>v.estado==='enviado'||v.estado==='recibido'||v.estado==='recepcionado';
-  const hoy=viajes.filter(v=>esHoy(v)&&esVisible(v));
-  const enviados=hoy.filter(v=>v.estado==='enviado');
-  const recibidos=hoy.filter(v=>v.estado==='recibido'||v.estado==='recepcionado');
+  // Pendientes (enviado): todas las fechas — no se limita al día
+  // Recepcionadas: solo las de hoy
+  const enviados=viajes.filter(v=>v.estado==='enviado');
+  const recibidos=viajes.filter(v=>(v.estado==='recibido'||v.estado==='recepcionado')&&esHoy(v));
+  const hoy=[...enviados,...recibidos];
   g('rec-stat-transit').textContent=enviados.length;
   g('rec-stat-rec').textContent=recibidos.length;
   const html=[
@@ -1264,12 +1269,17 @@ function selectViaje(id){
   const v=viajes.find(x=>x.id===id);
   if(!v)return;
   g('rec-detail-empty').style.display='none';
-  // En móvil, hacer scroll al detalle que está debajo de la lista
-  setTimeout(()=>{
-    const det=g('rec-detail-content');
-    if(det) det.scrollIntoView({behavior:'smooth', block:'start'});
-  }, 100);
+  // En móvil: ocultar panel lista, mostrar solo panel detalle
+  const recPanels = document.querySelectorAll('#mod-rec .rec-panel');
+  if(window.innerWidth <= 768 && recPanels.length >= 2){
+    recPanels[0].classList.add('hidden-mobile');
+    recPanels[1].classList.remove('hidden-mobile');
+    recPanels[1].scrollTop = 0;
+  }
   g('rec-detail-content').style.display='block';
+  // Show back button on mobile
+  const backBtn=g('rec-back-btn');
+  if(backBtn) backBtn.style.display=window.innerWidth<=768?'flex':'none';
   g('rec-detail-title').textContent='Detalle — '+v.guia;
   const confirmado=(v.estado==='recepcionado');
   g('rec-info-rows').innerHTML=`
@@ -1645,6 +1655,18 @@ function limpiarViajesLocal(from){
   renderViajesList();
   renderRecList();
   toast('Datos locales limpiados.','ok');
+}
+
+// ═══════════════════════════════════════
+//  MOBILE REC NAVIGATION
+// ═══════════════════════════════════════
+function recVolverLista(){
+  const recPanels = document.querySelectorAll('#mod-rec .rec-panel');
+  if(recPanels.length >= 2){
+    recPanels[0].classList.remove('hidden-mobile');
+    recPanels[1].classList.add('hidden-mobile');
+  }
+  selectedViajeId = null;
 }
 
 // ═══════════════════════════════════════
