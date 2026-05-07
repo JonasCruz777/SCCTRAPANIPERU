@@ -379,9 +379,8 @@ tr:hover td{background:var(--bg3)}
         <div class="stat-card"><span>Jabas enviadas</span><strong id="trp-stat-jabas">0</strong></div>
       </div>
       <div id="trp-viajes-list"><div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-        <button class="btn" onclick="exportarViajes()">↓ Exportar día</button>
-        <button class="btn" style="color:var(--red);border-color:var(--red-border)" onclick="limpiarViajesLocal('trp')">✕ Limpiar local</button>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <button class="btn" style="width:100%;color:var(--red);border-color:var(--red-border)" onclick="limpiarViajesLocal('trp')">✕ Limpiar viajes del día</button>
       </div>
     </div>
   </div>
@@ -392,6 +391,7 @@ tr:hover td{background:var(--bg3)}
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--text)">Reportes guardados</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">Todos los viajes registrados</div>
+        <button onclick="limpiarReportes()" style="margin-top:6px;font-size:11px;padding:4px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--red-border);background:transparent;color:var(--red)">✕ Limpiar reportes</button>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div style="display:flex;gap:6px;align-items:center">
@@ -434,10 +434,7 @@ tr:hover td{background:var(--bg3)}
   <div class="rec-panel">
     <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
       <span>Pendientes de recepción</span>
-      <div style="display:flex;gap:6px">
-        <button onclick="actualizarRecepcion()" style="font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Actualizar</button>
-        <button onclick="limpiarViajesLocal('rec')" style="font-size:12px;padding:6px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--red-border);background:transparent;color:var(--red)">✕</button>
-      </div>
+      <button onclick="actualizarRecepcion()" style="font-size:12px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Actualizar</button>
     </div>
     <div class="stats-grid">
       <div class="stat-card warn"><span>Pendientes</span><strong id="rec-stat-transit">0</strong></div>
@@ -1410,8 +1407,8 @@ async function enviarGuia(id, event){
       // Update local estado to 'enviado'
       const idx=viajes.findIndex(x=>x.id===id);
       if(idx!==-1){ viajes[idx].estado='enviado'; saveData('viajes',viajes); }
+      renderViajesList(); // renderiza con nuevo estado 'enviado'
       toast('Guía '+v.guia+' exportada a recepción.','ok');
-      renderViajesList();
     }else{
       toast('Error al enviar: '+(res.error||'desconocido'),true);
       if(btn){btn.textContent='↑ Enviar a recepción';btn.disabled=false;}
@@ -1431,6 +1428,10 @@ async function actualizarRecepcion(){
     if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
     return;
   }
+  // Limpiar local de recepción antes de recargar (solo enviado y recepcionado)
+  const todosLocal = loadData('viajes');
+  const soloTransito = todosLocal.filter(v=>v.estado==='transito');
+  saveData('viajes', soloTransito); // solo conserva los en tránsito locales
   try{
     const res=await jsonp({action:'getViajes',estado:''});
     if(res&&res.ok&&res.rows){
@@ -1527,6 +1528,10 @@ async function actualizarRecepcion(){
     if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
     return;
   }
+  // Limpiar local de recepción antes de recargar (solo enviado y recepcionado)
+  const todosLocal = loadData('viajes');
+  const soloTransito = todosLocal.filter(v=>v.estado==='transito');
+  saveData('viajes', soloTransito); // solo conserva los en tránsito locales
   try{
     const res=await jsonp({action:'getViajes',estado:''});
     if(res&&res.ok&&res.rows){
@@ -1618,11 +1623,25 @@ const ESTADO_PRIORITY = {transito:0, enviado:1, recibido:2, recepcionado:3};
 
 
 function limpiarViajesLocal(from){
-  if(!confirm('¿Limpiar todos los viajes del local? Esta acción no afecta el Sheet.')) return;
-  saveData('viajes', []);
-  renderViajesList();
-  renderRecList();
-  toast('Datos locales limpiados.','ok');
+  if(from==='trp'){
+    if(!confirm('¿Limpiar los viajes del día (en tránsito y enviados)? No afecta reportes ni el Sheet.')) return;
+    // Solo elimina transito y enviado — conserva recepcionados para reportes
+    const todos = loadData('viajes');
+    const conservar = todos.filter(v=>v.estado==='recibido'||v.estado==='recepcionado');
+    saveData('viajes', conservar);
+    renderViajesList();
+    toast('Viajes del día limpiados.','ok');
+  }
+}
+
+function limpiarReportes(){
+  if(!confirm('¿Limpiar los reportes guardados? Solo afecta el almacenamiento local.')) return;
+  const todos = loadData('viajes');
+  // Solo conserva los que NO son recepcionados (transito, enviado)
+  const conservar = todos.filter(v=>v.estado!=='recibido'&&v.estado!=='recepcionado');
+  saveData('viajes', conservar);
+  renderReportes();
+  toast('Reportes limpiados.','ok');
 }
 
 // ═══════════════════════════════════════
