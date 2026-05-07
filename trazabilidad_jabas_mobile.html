@@ -1336,7 +1336,7 @@ function selectViaje(id){
       const d=l.recibidas-l.enviadas;
       const color=d<0?'var(--red)':d>0?'var(--amber)':'var(--green)';
       html+=`<div class="lote-rec-item">
-        <div class="lote-rec-head">${l.supervisor} — ${l.lote}</div>
+        <div class="lote-rec-head">Lote ${l.lote}</div>
         <div class="lote-rec-grid">
           <div class="lote-rec-val"><span>Enviadas</span><strong>${l.enviadas}</strong></div>
           <div class="lote-rec-val"><span>Recibidas</span><strong>${l.recibidas}</strong></div>
@@ -1354,7 +1354,7 @@ function selectViaje(id){
     let html='';
     v.lotes.forEach((l,i)=>{
       html+=`<div class="lote-rec-item">
-        <div class="lote-rec-head">${l.supervisor} — ${l.lote}</div>
+        <div class="lote-rec-head">Lote ${l.lote}</div>
         <div class="ff"><label>Jabas recibidas (cuenta físicamente)</label>
         <input type="number" min="0" id="rec-inp-${i}" placeholder="0" style="font-size:18px;text-align:center" oninput="checkRecDiff()"/></div>
       </div>`;
