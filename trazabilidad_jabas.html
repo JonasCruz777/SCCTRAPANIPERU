@@ -159,6 +159,23 @@ tr:hover td{background:var(--bg3)}
 #toast.err{border-color:var(--red-border);color:var(--red)}
 #toast.ok{border-color:var(--green-border);color:var(--green)}
 
+/* LOGIN */
+#screen-login{display:none;position:fixed;inset:0;background:#0a0d13;z-index:200;align-items:center;justify-content:center;padding:20px}
+#screen-login.active{display:flex}
+.login-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;width:100%;max-width:340px}
+.login-logo{text-align:center;font-size:32px;margin-bottom:16px}
+.login-title{font-size:18px;font-weight:600;color:var(--text);text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--text3);text-align:center;margin-bottom:24px}
+.login-field{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.login-field label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.login-field input{height:44px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg3);color:var(--text);padding:0 12px;font-size:14px;outline:none;transition:border .15s}
+.login-field input:focus{border-color:var(--blue-border)}
+.login-err{font-size:12px;color:var(--red);text-align:center;min-height:18px;margin-bottom:8px}
+.login-btn{width:100%;height:44px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.login-btn:hover{opacity:.85}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-offline{font-size:11px;color:var(--text3);text-align:center;margin-top:12px}
+
 /* ═══════════ MOBILE OVERRIDES ═══════════ */
 @media (max-width: 768px) {
   /* Topbar */
@@ -224,8 +241,22 @@ tr:hover td{background:var(--bg3)}
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="screen-login" class="active">
+  <div class="login-card">
+    <div class="login-logo">🌿</div>
+    <div class="login-title">Trazabilidad de Jabas</div>
+    <div class="login-sub">Sistema de control de cosecha</div>
+    <div class="login-field"><label>Usuario</label><input type="text" id="l-user" placeholder="usuario" autocomplete="username"/></div>
+    <div class="login-field"><label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••" autocomplete="current-password"/></div>
+    <div class="login-err" id="l-err"></div>
+    <button class="login-btn" id="l-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-offline" id="l-offline" style="display:none">⚪ Sin conexión — usando credenciales locales</div>
+  </div>
+</div>
+
 <!-- TOPBAR -->
-<div class="topbar">
+<div class="topbar" style="display:none" id="main-topbar">
   <div class="topbar-brand">
     <strong>Trazabilidad de Jabas</strong>
     <span>Sistema de control de cosecha</span>
@@ -244,11 +275,20 @@ tr:hover td{background:var(--bg3)}
       Recepción
     </div>
   </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding-right:4px">
+    <span id="topbar-user" style="font-size:12px;color:var(--text2)"></span>
+    <button onclick="doLogout()" style="font-size:11px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3)">Salir</button>
+  </div>
 </div>
 
+<div id="main-app" style="display:none">
 <!-- ══════════════ MÓDULO CONFIGURACIÓN ══════════════ -->
 <div class="module active" id="mod-cfg">
   <div class="cfg-sidebar">
+     <div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:4px">
+       <button onclick="publicarMaestros()" style="flex:1;font-size:10px;padding:6px 4px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue)">↑ Publicar</button>
+       <button onclick="sincronizarMaestros()" style="flex:1;font-size:10px;padding:6px 4px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Sincronizar</button>
+     </div>
     <div class="nav-item active" onclick="showCfgPage('Usuarios',this)">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Usuarios
     </div>
@@ -481,6 +521,8 @@ tr:hover td{background:var(--bg3)}
   </div>
 </div>
 
+</div><!-- /main-app -->
+
 <!-- MODALES -->
 <div class="modal-bg" id="modal-form">
   <div class="modal">
@@ -516,6 +558,105 @@ tr:hover td{background:var(--bg3)}
 <div id="toast"></div>
 
 <script>
+// ═══════════════════════════════════════
+//  SHA-256 (client-side hash)
+// ═══════════════════════════════════════
+async function sha256(msg){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ═══════════════════════════════════════
+//  LOGIN / AUTH
+// ═══════════════════════════════════════
+const ROLE_ACCESS={
+  'Administrador':['cfg','trp','rec'],
+  'Supervisor':   ['trp','rec'],
+  'Transportista':['trp'],
+  'Recepción':    ['rec'],
+  'Reportes':     ['trp','rec']
+};
+let currentUser=null;
+
+async function doLogin(){
+  const usuario=document.getElementById('l-user').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const errEl=document.getElementById('l-err');
+  const btn=document.getElementById('l-btn');
+  if(!usuario||!pass){errEl.textContent='Completa usuario y contraseña.';return;}
+  errEl.textContent=''; btn.disabled=true; btn.textContent='Verificando...';
+  const hash=await sha256(pass);
+  // Try online first
+  const online=await checkSyncStatus();
+  let user=null;
+  if(online){
+    try{
+      const res=await jsonp({action:'login',usuario,pass:hash});
+      if(res&&res.ok){
+        user={nombre:res.nombre,rol:res.rol,usuario,accesos:res.accesos||{}};
+        // Cache locally for offline
+        localStorage.setItem('traz_session',JSON.stringify({usuario,hash,nombre:res.nombre,rol:res.rol}));
+      } else {
+        errEl.textContent=res.msg||'Usuario o contraseña incorrectos.';
+        btn.disabled=false; btn.textContent='Ingresar'; return;
+      }
+    }catch(e){online&&(user=tryOfflineLogin(usuario,hash,errEl,btn));}
+  } else {
+    user=tryOfflineLogin(usuario,hash,errEl,btn);
+  }
+  if(!user){btn.disabled=false;btn.textContent='Ingresar';return;}
+  enterApp(user);
+  btn.disabled=false; btn.textContent='Ingresar';
+}
+
+function tryOfflineLogin(usuario,hash,errEl,btn){
+  document.getElementById('l-offline').style.display='block';
+  const cached=JSON.parse(localStorage.getItem('traz_session')||'null');
+  if(cached&&cached.usuario===usuario&&cached.hash===hash){
+    return {nombre:cached.nombre,rol:cached.rol,usuario,accesos:{}};
+  }
+  errEl.textContent='Sin conexión y sin sesión guardada para este usuario.';
+  return null;
+}
+
+function enterApp(user){
+  currentUser=user;
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('main-topbar').style.display='flex';
+  document.getElementById('main-app').style.display='block';
+  // Show/hide modules based on role
+  const access=ROLE_ACCESS[user.rol]||[];
+  document.querySelectorAll('.mod-tab').forEach(tab=>{
+    const mod=tab.getAttribute('onclick').match(/'(\w+)'/)?.[1];
+    if(mod) tab.style.display=access.includes(mod)||mod==='cfg'&&user.rol==='Administrador'?'':'none';
+  });
+  // Show user name in topbar
+  const userEl=document.getElementById('topbar-user');
+  if(userEl) userEl.textContent=user.nombre+' ('+user.rol+')';
+  // Init first allowed module
+  const firstMod=access[0]||'cfg';
+  const firstTab=document.querySelector(`.mod-tab[onclick*="'${firstMod}'"]`);
+  if(firstTab) firstTab.click();
+  CFG_SHEETS.forEach(s=>renderCfgTable(s));
+  addLote();
+}
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById('main-topbar').style.display='none';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('screen-login').classList.add('active');
+  document.getElementById('l-user').value='';
+  document.getElementById('l-pass').value='';
+  document.getElementById('l-err').textContent='';
+  document.getElementById('l-offline').style.display='none';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+});
+
 // ═══════════════════════════════════════
 //  CONSTANTES
 // ═══════════════════════════════════════
@@ -680,8 +821,17 @@ function saveRecord(){
   const name=currentCfgSheet; let record={};
   if(name==='Usuarios'){
     const acc={};document.querySelectorAll('[data-mod]').forEach(cb=>{if(!acc[cb.dataset.mod])acc[cb.dataset.mod]=[];if(cb.checked)acc[cb.dataset.mod].push(cb.dataset.acc);});
-    record={'DNI':v('f-dni'),'Apellidos y Nombres':v('f-nom'),'Usuario':v('f-usu'),'Contraseña':v('f-pass'),'Rol':v('f-rol'),'Estado':v('f-est'),'Accesos':JSON.stringify(acc)};
-    if(!record['DNI']||!record['Apellidos y Nombres']||!record['Usuario']){toast('DNI, nombre y usuario son obligatorios.',true);return;}
+    if(!v('f-dni')||!v('f-nom')||!v('f-usu')){toast('DNI, nombre y usuario son obligatorios.',true);return;}
+    const _passRaw=v('f-pass');
+    const _existHash=editIdx!==null?(loadData('Usuarios')[editIdx]?.['Contraseña']||''):'';
+    (async()=>{
+      const _hash=_passRaw?await sha256(_passRaw):_existHash;
+      const _rec={'DNI':v('f-dni'),'Apellidos y Nombres':v('f-nom'),'Usuario':v('f-usu'),'Contraseña':_hash,'Rol':v('f-rol'),'Estado':v('f-est'),'Accesos':JSON.stringify(acc)};
+      const _d=loadData(name);if(editIdx!==null){_d[editIdx]=_rec;}else{_d.push(_rec);}
+      saveData(name,_d);renderCfgTable(name);closeForm();toast('Usuario guardado.');
+    })();
+    return;
+  } else if(name==='Cultivos'){
   } else if(name==='Cultivos'){
     record={'Cultivo':v('f-cul'),'Etapa':v('f-eta'),'Módulo':v('f-mod'),'Lote':v('f-lot'),'Especie':v('f-esp'),'Variedad':v('f-var'),'Patrón':v('f-pat'),'Copa':v('f-cop'),'Ha Total':v('f-hat'),'Ha Sembrada':v('f-has'),'Marco Plantación':v('f-mar'),'Plantas Hectárea':v('f-pha'),'Plantas Totales':v('f-pto'),'Plantas Sembradas':v('f-pse'),'Inicio Campaña':v('f-ica'),'Fecha Transplante':v('f-tra'),'Etapa Actual':v('f-eat'),'Estado':v('f-est')};
     if(!record['Cultivo']){toast('El cultivo es obligatorio.',true);return;}
@@ -1765,6 +1915,46 @@ function resetDescargaBtns(){
 }
 
 // ═══════════════════════════════════════
+//  PUBLICAR / SINCRONIZAR MAESTROS
+// ═══════════════════════════════════════
+const MAESTROS_SYNC = ['Supervisores','Transportistas','Cultivos','Trabajadores','Usuarios'];
+
+async function publicarMaestros(){
+  const online = await checkSyncStatus();
+  if(!online){toast('Sin conexión. No se puede publicar.',true);return;}
+  toast('Publicando maestros...','ok');
+  let ok=0,err=0;
+  for(const name of MAESTROS_SYNC){
+    const data = loadData(name);
+    if(!data.length) continue;
+    try{
+      const res = await jsonp({action:'importAll',sheet:name,records:JSON.stringify(data)});
+      if(res&&res.ok) ok++;
+      else err++;
+    }catch(e){err++;}
+  }
+  toast(ok+' maestros publicados'+(err?' · '+err+' errores':''),'ok');
+}
+
+async function sincronizarMaestros(){
+  const online = await checkSyncStatus();
+  if(!online){toast('Sin conexión. No se puede sincronizar.',true);return;}
+  toast('Sincronizando maestros...','ok');
+  let ok=0,err=0;
+  for(const name of MAESTROS_SYNC){
+    try{
+      const res = await jsonp({action:'getAll',sheet:name});
+      if(res&&res.ok&&res.rows){
+        saveData(name,res.rows);
+        renderCfgTable(name);
+        ok++;
+      }else err++;
+    }catch(e){err++;}
+  }
+  toast(ok+' maestros sincronizados'+(err?' · '+err+' errores':''),'ok');
+}
+
+// ═══════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════
 function g(id){ return document.getElementById(id); }
@@ -1776,10 +1966,8 @@ function toast(msg,type=''){
 }
 
 // ═══════════════════════════════════════
-//  INIT
+//  INIT — run after login (enterApp)
 // ═══════════════════════════════════════
-CFG_SHEETS.forEach(s=>renderCfgTable(s));
-addLote();
 
 </script>
 </body>
