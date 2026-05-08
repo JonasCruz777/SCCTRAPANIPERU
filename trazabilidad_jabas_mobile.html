@@ -246,7 +246,7 @@ tr:hover td{background:var(--bg3)}
 .trp-layout,#trp-pane-nuevo{grid-template-columns:1fr !important}
 #mod-cfg,#mod-trp,#mod-rec{flex-direction:column}
 .trp-panel,.rec-panel{border-right:none !important;border-bottom:1px solid var(--border)}
-.cfg-sidebar{width:100% !important;height:auto !important;border-right:none !important;border-top:1px solid var(--border) !important;order:2 !important;display:flex !important;overflow-x:auto !important;flex-wrap:wrap}
+.cfg-sidebar{width:100% !important;height:auto !important;border-right:none !important;border-top:1px solid var(--border) !important;order:2 !important;display:flex !important;overflow-x:auto !important}
 .cfg-sidebar>div:first-child{display:none !important}
 .cfg-main{order:1 !important}
 .cfg-sidebar .nav-item{flex-direction:column !important;padding:4px 12px !important;font-size:10px !important;gap:2px !important;white-space:nowrap !important;border-left:none !important;border-top:2px solid transparent !important;justify-content:center !important}
@@ -302,8 +302,9 @@ tr:hover td{background:var(--bg3)}
       Recepción
     </div>
   </div>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding-right:4px">
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:4px">
     <span id="topbar-user" style="font-size:12px;color:var(--text2)"></span>
+    <button onclick="sincronizarMaestros()" style="font-size:11px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Sincronizar</button>
     <button onclick="doLogout()" style="font-size:11px;padding:5px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3)">Salir</button>
   </div>
 </div>
@@ -312,9 +313,8 @@ tr:hover td{background:var(--bg3)}
 <!-- ══════════════ MÓDULO CONFIGURACIÓN ══════════════ -->
 <div class="module active" id="mod-cfg">
   <div class="cfg-sidebar">
-     <div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:4px">
-       <button onclick="publicarMaestros()" style="flex:1;font-size:10px;padding:6px 4px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue)">↑ Publicar</button>
-       <button onclick="sincronizarMaestros()" style="flex:1;font-size:10px;padding:6px 4px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Sincronizar</button>
+     <div style="padding:10px 12px;border-bottom:1px solid var(--border)">
+       <button onclick="sincronizarMaestros()" style="width:100%;font-size:10px;padding:6px 4px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Sincronizar maestros</button>
      </div>
     <div class="nav-item active" onclick="showCfgPage('Usuarios',this)">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Usuarios
@@ -334,27 +334,27 @@ tr:hover td{background:var(--bg3)}
   </div>
   <div class="cfg-main">
     <div class="page active" id="cfg-page-Usuarios">
-      <div class="page-header"><div class="page-title">Usuarios</div><div class="page-actions"><button class="btn" onclick="exportSheet('Usuarios')">↓ Exportar</button><button class="btn" onclick="openUpload('Usuarios')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Usuarios')">+ Nuevo</button></div></div>
+      <div class="page-header"><div class="page-title">Usuarios</div><div class="page-actions"><button class="btn" onclick="exportSheet('Usuarios')">↓ Exportar</button><button class="btn" onclick="openUpload('Usuarios')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Usuarios')">+ Nuevo</button><button class="btn" style="color:var(--blue);border-color:var(--blue-border)" onclick="publicarMaestro('Usuarios')">↑ Publicar</button></div></div>
       <div class="search-bar"><input placeholder="Buscar..." oninput="filterRows('cfg-tbody-Usuarios',this.value)"/></div>
       <div class="table-wrap"><table><thead><tr><th>DNI</th><th>Apellidos y nombres</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="cfg-tbody-Usuarios"><tr><td colspan="6" class="empty-td">Sin registros.</td></tr></tbody></table></div>
     </div>
     <div class="page" id="cfg-page-Cultivos">
-      <div class="page-header"><div class="page-title">Cultivos</div><div class="page-actions"><button class="btn" onclick="exportSheet('Cultivos')">↓ Exportar</button><button class="btn" onclick="openUpload('Cultivos')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Cultivos')">+ Nuevo</button></div></div>
+      <div class="page-header"><div class="page-title">Cultivos</div><div class="page-actions"><button class="btn" onclick="exportSheet('Cultivos')">↓ Exportar</button><button class="btn" onclick="openUpload('Cultivos')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Cultivos')">+ Nuevo</button><button class="btn" style="color:var(--blue);border-color:var(--blue-border)" onclick="publicarMaestro('Cultivos')">↑ Publicar</button></div></div>
       <div class="search-bar"><input placeholder="Buscar..." oninput="filterRows('cfg-tbody-Cultivos',this.value)"/></div>
       <div class="table-wrap"><table><thead><tr><th>Cultivo</th><th>Etapa</th><th>Módulo</th><th>Lote</th><th>Variedad</th><th>Patrón</th><th>Ha total</th><th>Plantas tot.</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="cfg-tbody-Cultivos"><tr><td colspan="10" class="empty-td">Sin registros.</td></tr></tbody></table></div>
     </div>
     <div class="page" id="cfg-page-Supervisores">
-      <div class="page-header"><div class="page-title">Supervisores</div><div class="page-actions"><button class="btn" onclick="exportSheet('Supervisores')">↓ Exportar</button><button class="btn" onclick="openUpload('Supervisores')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Supervisores')">+ Nuevo</button></div></div>
+      <div class="page-header"><div class="page-title">Supervisores</div><div class="page-actions"><button class="btn" onclick="exportSheet('Supervisores')">↓ Exportar</button><button class="btn" onclick="openUpload('Supervisores')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Supervisores')">+ Nuevo</button><button class="btn" style="color:var(--blue);border-color:var(--blue-border)" onclick="publicarMaestro('Supervisores')">↑ Publicar</button></div></div>
       <div class="search-bar"><input placeholder="Buscar..." oninput="filterRows('cfg-tbody-Supervisores',this.value)"/></div>
       <div class="table-wrap"><table><thead><tr><th>DNI</th><th>Apellidos y nombres</th><th>Grupo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="cfg-tbody-Supervisores"><tr><td colspan="5" class="empty-td">Sin registros.</td></tr></tbody></table></div>
     </div>
     <div class="page" id="cfg-page-Transportistas">
-      <div class="page-header"><div class="page-title">Transportistas</div><div class="page-actions"><button class="btn" onclick="exportSheet('Transportistas')">↓ Exportar</button><button class="btn" onclick="openUpload('Transportistas')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Transportistas')">+ Nuevo</button></div></div>
+      <div class="page-header"><div class="page-title">Transportistas</div><div class="page-actions"><button class="btn" onclick="exportSheet('Transportistas')">↓ Exportar</button><button class="btn" onclick="openUpload('Transportistas')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Transportistas')">+ Nuevo</button><button class="btn" style="color:var(--blue);border-color:var(--blue-border)" onclick="publicarMaestro('Transportistas')">↑ Publicar</button></div></div>
       <div class="search-bar"><input placeholder="Buscar..." oninput="filterRows('cfg-tbody-Transportistas',this.value)"/></div>
       <div class="table-wrap"><table><thead><tr><th>DNI</th><th>Apellidos y nombres</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="cfg-tbody-Transportistas"><tr><td colspan="4" class="empty-td">Sin registros.</td></tr></tbody></table></div>
     </div>
     <div class="page" id="cfg-page-Trabajadores">
-      <div class="page-header"><div class="page-title">Trabajadores</div><div class="page-actions"><button class="btn" onclick="exportSheet('Trabajadores')">↓ Exportar</button><button class="btn" onclick="openUpload('Trabajadores')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Trabajadores')">+ Nuevo</button></div></div>
+      <div class="page-header"><div class="page-title">Trabajadores</div><div class="page-actions"><button class="btn" onclick="exportSheet('Trabajadores')">↓ Exportar</button><button class="btn" onclick="openUpload('Trabajadores')">↑ Carga masiva</button><button class="btn btn-primary" onclick="openForm('Trabajadores')">+ Nuevo</button><button class="btn" style="color:var(--blue);border-color:var(--blue-border)" onclick="publicarMaestro('Trabajadores')">↑ Publicar</button></div></div>
       <div class="search-bar"><input placeholder="Buscar..." oninput="filterRows('cfg-tbody-Trabajadores',this.value)"/></div>
       <div class="table-wrap"><table><thead><tr><th>DNI</th><th>Trabajador</th><th>Ap. Paterno</th><th>Ap. Materno</th><th>Nombres</th><th>Acciones</th></tr></thead><tbody id="cfg-tbody-Trabajadores"><tr><td colspan="6" class="empty-td">Sin registros.</td></tr></tbody></table></div>
     </div>
@@ -613,28 +613,35 @@ async function doLogin(){
   if(!usuario||!pass){errEl.textContent='Completa usuario y contraseña.';return;}
   errEl.textContent=''; btn.disabled=true; btn.textContent='Verificando...';
   const hash=await sha256(pass);
-  // Try online first
-  const online=await checkSyncStatus();
   let user=null;
-  if(online){
-    try{
-      const res=await jsonp({action:'login',usuario,pass:hash});
-      if(res&&res.ok){
-        user={nombre:res.nombre,rol:res.rol,usuario,accesos:res.accesos||{}};
-        localStorage.setItem('traz_session',JSON.stringify({usuario,hash,nombre:res.nombre,rol:res.rol}));
-      } else {
-        // Wrong credentials online — also try local in case Sheet not yet updated
-        user=tryOfflineLogin(usuario,hash,errEl,btn);
-        if(!user){errEl.textContent=res.msg||'Usuario o contraseña incorrectos.';btn.disabled=false;btn.textContent='Ingresar';return;}
-      }
-    }catch(e){
-      // Network error — try offline
-      user=tryOfflineLogin(usuario,hash,errEl,btn);
+
+  // 1. Try Sheet first (source of truth)
+  try{
+    const res=await jsonp({action:'login',usuario,pass:hash});
+    if(res&&res.ok){
+      user={nombre:res.nombre,rol:res.rol,usuario,accesos:res.accesos||{}};
+      // Cache for offline use
+      localStorage.setItem('traz_session',JSON.stringify({usuario,hash,nombre:res.nombre,rol:res.rol}));
+      // Also cache Usuarios locally so other modules work
+      try{
+        const allUsers=await jsonp({action:'getAll',sheet:'Usuarios'});
+        if(allUsers&&allUsers.ok&&allUsers.rows) saveData('Usuarios',allUsers.rows);
+      }catch(e){}
     }
-  } else {
+  }catch(e){
+    // Sheet unreachable — show offline indicator
+    document.getElementById('l-offline').style.display='block';
+  }
+
+  // 2. If Sheet failed or unreachable, try local
+  if(!user){
     user=tryOfflineLogin(usuario,hash,errEl,btn);
   }
-  if(!user){btn.disabled=false;btn.textContent='Ingresar';return;}
+
+  if(!user){
+    errEl.textContent='Usuario o contraseña incorrectos.';
+    btn.disabled=false; btn.textContent='Ingresar'; return;
+  }
   enterApp(user);
   btn.disabled=false; btn.textContent='Ingresar';
 }
@@ -1962,21 +1969,35 @@ function resetDescargaBtns(){
 // ═══════════════════════════════════════
 const MAESTROS_SYNC = ['Supervisores','Transportistas','Cultivos','Trabajadores','Usuarios'];
 
-async function publicarMaestros(){
+async function publicarMaestro(name){
   const online = await checkSyncStatus();
-  if(!online){toast('Sin conexión. No se puede publicar.',true);return;}
-  toast('Publicando maestros...','ok');
-  let ok=0,err=0;
-  for(const name of MAESTROS_SYNC){
-    const data = loadData(name);
-    if(!data.length) continue;
-    try{
-      const res = await jsonp({action:'importAll',sheet:name,records:JSON.stringify(data)});
-      if(res&&res.ok) ok++;
-      else err++;
-    }catch(e){err++;}
-  }
-  toast(ok+' maestros publicados'+(err?' · '+err+' errores':''),'ok');
+  if(!online){toast('Sin conexión.',true);return;}
+  const data = loadData(name);
+  if(!data.length){toast('Sin datos para publicar.',true);return;}
+  toast('Publicando '+name+'...','ok');
+  try{
+    const res = await jsonp({action:'importAll',sheet:name,records:JSON.stringify(data)});
+    if(res&&res.ok) toast(name+' publicado: '+res.imported+' registros.','ok');
+    else toast('Error al publicar '+name,true);
+  }catch(e){toast('Error de conexión.',true);}
+}
+
+async function publicarMaestro(name){
+  const online = await checkSyncStatus();
+  if(!online){toast('Sin conexión.',true);return;}
+  const data = loadData(name);
+  if(!data.length){toast('Sin datos para publicar.',true);return;}
+  toast('Publicando '+name+'...','ok');
+  try{
+    const res = await jsonp({action:'importAll',sheet:name,records:JSON.stringify(data)});
+    if(res&&res.ok) toast(name+' publicado: '+res.inserted+' nuevos, '+res.updated+' actualizados.','ok');
+    else toast('Error al publicar '+name,true);
+  }catch(e){toast('Error de conexión.',true);}
+}
+
+async function publicarMaestros(){
+  // Keep for backwards compatibility
+  for(const name of MAESTROS_SYNC) await publicarMaestro(name);
 }
 
 async function sincronizarMaestros(){
