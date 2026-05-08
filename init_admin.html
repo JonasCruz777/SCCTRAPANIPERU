@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>Inicializar Admin</title>
+<style>
+body{font-family:system-ui;background:#0f1117;color:#e8eaf0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+.card{background:#171b25;border:1px solid #2d3447;border-radius:12px;padding:32px;max-width:360px;width:100%;text-align:center}
+h2{margin-bottom:8px;font-size:18px}
+p{font-size:13px;color:#9aa3bc;margin-bottom:20px}
+.info{background:#1a2540;border:1px solid #2d4a7a;border-radius:8px;padding:12px;margin-bottom:20px;font-size:13px;text-align:left}
+.info b{color:#4f8ef7}
+.btn{width:100%;padding:12px;background:#4f8ef7;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{opacity:.85}
+.ok{color:#34d399;font-size:14px;margin-top:16px;display:none}
+.err{color:#f87171;font-size:13px;margin-top:12px;display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div style="font-size:36px;margin-bottom:12px">🌿</div>
+  <h2>Inicializar Usuario Admin</h2>
+  <p>Esto creará el usuario administrador en el localStorage de este navegador.</p>
+  <div class="info">
+    <div><b>Usuario:</b> admin</div>
+    <div><b>Contraseña:</b> admin123</div>
+    <div><b>Rol:</b> Administrador</div>
+  </div>
+  <button class="btn" onclick="initAdmin()">Crear usuario admin</button>
+  <div class="ok" id="ok">✓ Usuario admin creado. Abre la app y entra con admin / admin123</div>
+  <div class="err" id="err"></div>
+</div>
+<script>
+async function sha256(msg){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function initAdmin(){
+  try{
+    const hash=await sha256('admin123');
+    const usuarios=[{
+      "DNI":"00000000",
+      "Apellidos y Nombres":"Administrador Sistema",
+      "Usuario":"admin",
+      "Contraseña":hash,
+      "Rol":"Administrador",
+      "Estado":"Activo",
+      "Accesos":"{}"
+    }];
+    localStorage.setItem('traz_Usuarios', JSON.stringify(usuarios));
+    document.getElementById('ok').style.display='block';
+    console.log('Hash generado:', hash);
+    console.log('Usuario creado:', usuarios);
+  }catch(e){
+    document.getElementById('err').style.display='block';
+    document.getElementById('err').textContent='Error: '+e.message;
+  }
+}
+</script>
+</body>
+</html>
