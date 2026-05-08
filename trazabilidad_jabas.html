@@ -178,64 +178,48 @@ tr:hover td{background:var(--bg3)}
 
 /* ═══════════ MOBILE OVERRIDES ═══════════ */
 @media (max-width: 768px) {
-  /* Topbar */
   .topbar { padding: 0 10px; height: auto; flex-wrap: wrap; }
   .topbar-brand { display: none; }
   .mod-tabs { width: 100%; overflow-x: auto; padding: 0; }
   .mod-tab { padding: 0 12px; font-size: 11px; white-space: nowrap; height: 44px; }
-
-  /* Modules full height */
   .module { height: calc(100vh - 44px); }
-
-  /* CFG sidebar → bottom nav */
   .cfg-sidebar { width: 100%; height: 50px; border-right: none; border-top: 1px solid var(--border); order: 2; display: flex; overflow-x: auto; }
   .cfg-sidebar .nav-item { flex-direction: column; padding: 6px 12px; font-size: 10px; gap: 3px; white-space: nowrap; border-left: none; border-top: 2px solid transparent; }
   .cfg-sidebar .nav-item.active { border-top-color: var(--blue); border-left-color: transparent; }
   .cfg-sidebar .nav-item svg { width: 18px; height: 18px; }
   #mod-cfg { flex-direction: column; }
   .cfg-main { flex: 1; overflow-y: auto; order: 1; padding: 12px; }
-
-  /* Tables → scrollable */
   .table-wrap { font-size: 11px; }
   th, td { padding: 6px 8px; }
-
-  /* Transport layout → stacked */
   .trp-layout, #trp-pane-nuevo { grid-template-columns: 1fr !important; }
   .trp-panel { border-right: none; border-bottom: 1px solid var(--border); padding: 12px; }
   #mod-trp { flex-direction: column; }
-
-  /* Reception layout → stacked */
   .rec-layout, #mod-rec { grid-template-columns: 1fr !important; flex-direction: column; }
   .rec-panel { border-right: none; border-bottom: 1px solid var(--border); padding: 12px; }
-
-  /* Form grids → single column on small */
   .fg3 { grid-template-columns: 1fr 1fr !important; }
   .fg { grid-template-columns: 1fr !important; }
-
-  /* Modal full screen */
   .modal-bg { padding: 0; align-items: flex-end; }
   .modal { border-radius: var(--radius-lg) var(--radius-lg) 0 0; max-height: 92vh; }
   .modal-body { max-height: 65vh; }
-
-  /* Buttons larger touch targets */
   .btn { padding: 10px 14px; font-size: 13px; }
   .act-btn { padding: 6px 10px; font-size: 12px; }
-
-  /* Stats grid */
   .stats-grid { grid-template-columns: 1fr 1fr; }
-
-  /* Lote inputs */
   .lote-item .fg { grid-template-columns: 1fr !important; }
-
-  /* Reportes filter stacked */
   #trp-pane-reportes > div:first-child { flex-direction: column; align-items: flex-start; gap: 10px; }
   #trp-pane-reportes > div:first-child > div { flex-wrap: wrap; }
+  .page-actions { gap: 4px; }
+  .page-actions .btn { padding: 6px 10px; font-size: 11px; }
+  .topbar > div:last-child { margin-left: 0 !important; width: 100%; justify-content: flex-end; padding: 4px 10px; border-top: 1px solid var(--border); }
 }
 
 @media (max-width: 400px) {
   .fg3 { grid-template-columns: 1fr !important; }
   .mod-tab span { display: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.topbar > div:last-child {
+  display: flex !important;
 }
 </style>
 </head>
@@ -286,9 +270,7 @@ tr:hover td{background:var(--bg3)}
 <!-- ══════════════ MÓDULO CONFIGURACIÓN ══════════════ -->
 <div class="module active" id="mod-cfg">
   <div class="cfg-sidebar">
-     <div style="padding:10px 12px;border-bottom:1px solid var(--border)">
-       <button onclick="sincronizarMaestros()" style="width:100%;font-size:10px;padding:6px 4px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--green-border);background:var(--green-bg);color:var(--green)">↓ Sincronizar maestros</button>
-     </div>
+
     <div class="nav-item active" onclick="showCfgPage('Usuarios',this)">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Usuarios
     </div>
@@ -336,13 +318,10 @@ tr:hover td{background:var(--bg3)}
 
 <!-- ══════════════ MÓDULO TRANSPORTE ══════════════ -->
 <div class="module" id="mod-trp" style="flex-direction:column">
-  <!-- Sub-pestañas -->
   <div style="display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 20px;height:42px;flex-shrink:0">
     <div class="trp-subtab active" id="trp-tab-nuevo" onclick="showTrpTab('nuevo')" style="display:flex;align-items:center;padding:0 16px;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid var(--blue);color:var(--blue)">Nuevo Registro</div>
     <div class="trp-subtab" id="trp-tab-reportes" onclick="showTrpTab('reportes')" style="display:flex;align-items:center;padding:0 16px;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3)">Reportes Guardados</div>
   </div>
-
-  <!-- Tab: Nuevo Registro -->
   <div id="trp-pane-nuevo" style="flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden">
     <div class="trp-panel">
       <div class="panel-title">Registro de viaje <span class="panel-sub">— transportista</span></div>
@@ -364,7 +343,6 @@ tr:hover td{background:var(--bg3)}
       <div class="form-card">
         <div class="form-card-title">Tiempos</div>
         <div style="display:flex;flex-direction:column;gap:10px">
-
           <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
             <div>
               <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Hora de carga</div>
@@ -373,7 +351,6 @@ tr:hover td{background:var(--bg3)}
             </div>
             <button id="trp-btn-carga" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarHora('carga')">● Marcar</button>
           </div>
-
           <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
             <div>
               <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Hora de salida</div>
@@ -382,7 +359,6 @@ tr:hover td{background:var(--bg3)}
             </div>
             <button id="trp-btn-salida" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarHora('salida')">● Marcar</button>
           </div>
-
           <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px">
             <div>
               <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Hora de llegada</div>
@@ -391,7 +367,6 @@ tr:hover td{background:var(--bg3)}
             </div>
             <button id="trp-btn-llegada" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarHora('llegada')">● Marcar</button>
           </div>
-
         </div>
       </div>
       <div class="form-card">
@@ -424,8 +399,6 @@ tr:hover td{background:var(--bg3)}
       </div>
     </div>
   </div>
-
-  <!-- Tab: Reportes Guardados -->
   <div id="trp-pane-reportes" style="flex:1;display:none;flex-direction:column;overflow:hidden">
     <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
       <div>
@@ -510,7 +483,6 @@ tr:hover td{background:var(--bg3)}
             <button id="rec-btn-fin" class="btn btn-primary" style="padding:8px 14px;font-size:12px" onclick="marcarDescarga('fin')">● Marcar</button>
           </div>
         </div>
-
         <div id="rec-lotes-inputs"></div>
         <div id="rec-resultado" style="display:none"></div>
         <div class="ff" style="margin-top:10px"><label>Observaciones</label><input type="text" id="rec-obs" placeholder="Incidencias, faltantes, daños..."/></div>
@@ -602,7 +574,6 @@ async function doLogin(){
       }catch(e){}
     }
   }catch(e){
-    // Sheet unreachable — show offline indicator
     document.getElementById('l-offline').style.display='block';
   }
 
@@ -619,27 +590,79 @@ async function doLogin(){
   btn.disabled=false; btn.textContent='Ingresar';
 }
 
-function tryOfflineLogin(usuario,hash,errEl,btn){
-  document.getElementById('l-offline').style.display='block';
-  // Try cached session first
-  const cached=JSON.parse(localStorage.getItem('traz_session')||'null');
-  if(cached&&cached.usuario===usuario&&cached.hash===hash){
-    return {nombre:cached.nombre,rol:cached.rol,usuario,accesos:{}};
+function tryOfflineLogin(usuario, hash, errEl, btn){
+  const offlineEl = document.getElementById('l-offline');
+  if(offlineEl) offlineEl.style.display='block';
+
+  // 1. Sesión cacheada
+  const cached = JSON.parse(localStorage.getItem('traz_session')||'null');
+  if(cached && cached.usuario.toLowerCase()===usuario.toLowerCase() && cached.hash===hash){
+    return {nombre:cached.nombre, rol:cached.rol, usuario, accesos:{}};
   }
-  // Try local Usuarios table directly
-  const usuarios=JSON.parse(localStorage.getItem('traz_Usuarios')||'[]');
-  const found=usuarios.find(u=>String(u['Usuario']).trim()===String(usuario).trim()
-    && String(u['Contraseña']).trim()===String(hash).trim()
-    && u['Estado']==='Activo');
+
+  // 2. Tabla Usuarios local (sincronizada del Sheet o creada offline)
+  const usuarios = JSON.parse(localStorage.getItem('traz_Usuarios')||'[]');
+  
+  // Si no hay usuarios locales, mostrar mensaje específico y botón de emergencia
+  if(usuarios.length===0){
+    errEl.textContent='No hay usuarios locales. Sincronice datos primero.';
+    crearBotonSincronizacionEmergencia(errEl);
+    return null;
+  }
+
+  const found = usuarios.find(u => {
+    const user = (u['Usuario']||'').toString().trim();
+    const pass = (u['Contraseña']||'').toString().trim();
+    const estado = (u['Estado']||'').toString().trim();
+    return user.toLowerCase() === usuario.toLowerCase() 
+        && pass === hash 
+        && estado === 'Activo';
+  });
+
   if(found){
-    // Cache session for future offline logins
-    localStorage.setItem('traz_session',JSON.stringify({
-      usuario,hash,nombre:found['Apellidos y Nombres'],rol:found['Rol']
+    localStorage.setItem('traz_session', JSON.stringify({
+      usuario, hash, 
+      nombre: found['Apellidos y Nombres']||found['Nombre']||usuario,
+      rol: found['Rol']||''
     }));
-    return {nombre:found['Apellidos y Nombres'],rol:found['Rol'],usuario,accesos:{}};
+    return {
+      nombre: found['Apellidos y Nombres']||found['Nombre']||usuario,
+      rol: found['Rol']||'',
+      usuario,
+      accesos:{}
+    };
   }
-  errEl.textContent='Usuario o contraseña incorrectos.';
+
+  // No coincide ningún usuario
+  errEl.textContent='Usuario, contraseña incorrectos, o cuenta inactiva.';
+  crearBotonSincronizacionEmergencia(errEl);
   return null;
+}
+
+function crearBotonSincronizacionEmergencia(errEl){
+  if(document.getElementById('l-sync-btn')) return;
+  const syncBtn = document.createElement('button');
+  syncBtn.id = 'l-sync-btn';
+  syncBtn.textContent = 'Descargar usuarios del servidor';
+  syncBtn.style.cssText = 'margin-top:8px;padding:8px 12px;width:100%;border-radius:6px;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);cursor:pointer;font-size:12px;';
+  syncBtn.onclick = async function(){
+    syncBtn.disabled = true;
+    syncBtn.textContent = 'Sincronizando...';
+    try{
+      const res = await jsonp({action:'getAll', sheet:'Usuarios'});
+      if(res && res.ok && res.rows){
+        saveData('Usuarios', res.rows);
+        toast('Usuarios descargados. Intente iniciar sesión de nuevo.','ok');
+      }else{
+        toast('No se pudieron obtener usuarios del servidor.',true);
+      }
+    }catch(e){
+      toast('Error de conexión. Verifique internet.',true);
+    }
+    syncBtn.disabled = false;
+    syncBtn.textContent = 'Reintentar descarga';
+  };
+  errEl.insertAdjacentElement('afterend', syncBtn);
 }
 
 function enterApp(user){
@@ -647,16 +670,13 @@ function enterApp(user){
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('main-topbar').style.display='flex';
   document.getElementById('main-app').style.display='block';
-  // Show/hide modules based on role
   const access=ROLE_ACCESS[user.rol]||[];
   document.querySelectorAll('.mod-tab').forEach(tab=>{
     const mod=tab.getAttribute('onclick').match(/'(\w+)'/)?.[1];
     if(mod) tab.style.display=access.includes(mod)||mod==='cfg'&&user.rol==='Administrador'?'':'none';
   });
-  // Show user name in topbar
   const userEl=document.getElementById('topbar-user');
   if(userEl) userEl.textContent=user.nombre+' ('+user.rol+')';
-  // Init first allowed module
   const firstMod=access[0]||'cfg';
   const firstTab=document.querySelector(`.mod-tab[onclick*="'${firstMod}'"]`);
   if(firstTab) firstTab.click();
@@ -855,16 +875,13 @@ function saveRecord(){
     })();
     return;
   } else if(name==='Cultivos'){
-  } else if(name==='Cultivos'){
     record={'Cultivo':v('f-cul'),'Etapa':v('f-eta'),'Módulo':v('f-mod'),'Lote':v('f-lot'),'Especie':v('f-esp'),'Variedad':v('f-var'),'Patrón':v('f-pat'),'Copa':v('f-cop'),'Ha Total':v('f-hat'),'Ha Sembrada':v('f-has'),'Marco Plantación':v('f-mar'),'Plantas Hectárea':v('f-pha'),'Plantas Totales':v('f-pto'),'Plantas Sembradas':v('f-pse'),'Inicio Campaña':v('f-ica'),'Fecha Transplante':v('f-tra'),'Etapa Actual':v('f-eat'),'Estado':v('f-est')};
     if(!record['Cultivo']){toast('El cultivo es obligatorio.',true);return;}
   } else if(name==='Supervisores'){
     record={'DNI':v('f-dni'),'Apellidos y Nombres':v('f-nom'),'Grupo':v('f-grupo'),'Estado':v('f-est')};
     if(!record['DNI']||!record['Apellidos y Nombres']){toast('DNI y nombre son obligatorios.',true);return;}
   } else if(name==='Transportistas'){
-    record=name==='Supervisores'
-      ?{'DNI':v('f-dni'),'Apellidos y Nombres':v('f-nom'),'Grupo':v('f-grupo'),'Estado':v('f-est')}
-      :{'DNI':v('f-dni'),'Apellidos y Nombres':v('f-nom'),'Estado':v('f-est')};
+    record={'DNI':v('f-dni'),'Apellidos y Nombres':v('f-nom'),'Estado':v('f-est')};
     if(!record['DNI']||!record['Apellidos y Nombres']){toast('DNI y nombre son obligatorios.',true);return;}
   } else if(name==='Trabajadores'){
     const pat=v('f-apat').toUpperCase(),mat=v('f-amat').toUpperCase(),nom=v('f-nom2').toUpperCase();
@@ -909,12 +926,10 @@ function previewFile(file){
   };
   reader.readAsBinaryString(file);
 }
-// Columnas numéricas por maestro
 const NUM_COLS = {
   Cultivos: ['Ha Total','Ha Sembrada','Plantas Hectárea','Plantas Totales','Plantas Sembradas'],
   Usuarios: [], Supervisores: [], Transportistas: [], Trabajadores: []
 };
-// Columnas de fecha por maestro
 const DATE_COLS = {
   Cultivos: ['Inicio Campaña','Fecha Transplante'],
   Usuarios: [], Supervisores: [], Transportistas: [], Trabajadores: []
@@ -923,19 +938,16 @@ const DATE_COLS = {
 function parseCell(name, col, val){
   const raw = String(val||'').trim();
   if(!raw) return '';
-  // Número
   if((NUM_COLS[name]||[]).includes(col)){
     const n = parseFloat(raw.replace(',','.'));
     return isNaN(n) ? raw : n;
   }
-  // Fecha — Excel la puede mandar como número serial
   if((DATE_COLS[name]||[]).includes(col)){
     if(!isNaN(raw) && raw !== ''){
-      // Número serial de Excel → fecha JS
       const d = new Date(Math.round((parseFloat(raw) - 25569)*86400*1000));
       if(!isNaN(d)) return d.toISOString().split('T')[0];
     }
-    return raw; // ya viene como string fecha
+    return raw;
   }
   return raw;
 }
@@ -954,7 +966,6 @@ function importRecords(){
       obj['Apellido Paterno']=pat; obj['Apellido Materno']=mat; obj['Nombres']=nom;
       obj['Trabajador']=[pat,mat,nom].filter(Boolean).join(' ');
     }
-    // Normalizar Estado si viene vacío
     if(name!=='Trabajadores' && !obj['Estado']) obj['Estado']='Activo';
     if(obj['DNI']||obj['Cultivo']||obj['Trabajador']){data.push(obj);n++;}
   });
@@ -987,7 +998,6 @@ function marcarHora(tipo){
   inp.value=hh;
   display.textContent=hh;
   display.style.color='var(--green)';
-  // Lock button
   btn.textContent='✓ '+hh;
   btn.style.background='var(--green-bg)';
   btn.style.color='var(--green)';
@@ -1046,12 +1056,10 @@ function loadBorrador(){
     if(!b)return;
     if(b.chofer) g('trp-chofer').value=b.chofer;
     if(b.tipo) g('trp-tipo').value=b.tipo;
-    // Restaurar horas marcadas
     ['carga','salida','llegada'].forEach(tipo=>{
       const key=tipo==='carga'?'hcarga':tipo==='salida'?'hsalida':'hllegada';
       const val=b[key];
       if(val){
-        g('trp-h'+key.replace('h','')==='carga'?'trp-hcarga':tipo==='salida'?'trp-hsalida':'trp-hllegada').value=val;
         const inp=g('trp-h'+key.slice(1));
         const display=g('trp-h'+key.slice(1)+'-display');
         const btn=g('trp-btn-'+tipo);
@@ -1060,7 +1068,6 @@ function loadBorrador(){
         if(btn){btn.textContent='✓ '+val;btn.style.background='var(--green-bg)';btn.style.color='var(--green)';btn.style.borderColor='var(--green-border)';btn.disabled=true;}
       }
     });
-    // Restaurar lotes
     if(b.lotes&&b.lotes.length){
       g('trp-lotes-container').innerHTML='';
       loteCount=0;
@@ -1088,34 +1095,29 @@ function accionPrincipal(){
   const hsalida=g('trp-hsalida').value;
   const hllegada=g('trp-hllegada').value;
   if(!hcarga&&!hsalida&&!hllegada){
-    // Solo guardar borrador
     guardarBorrador();
     toast('Borrador guardado.','ok');
     return;
   }
   if(hcarga && (!hsalida||!hllegada)){
-    // Guardar cambios parciales
     guardarBorrador();
     toast('Cambios guardados. Marca las horas restantes para registrar el carguío.','ok');
     return;
   }
-  // Registro completo
   registrarViaje();
 }
 
-function getLoteOptions(){ return ''; } // replaced by text input with autocomplete
+function getLoteOptions(){ return ''; }
 
 function onLoteInput(inp){
   const val = inp.value.trim().toUpperCase();
   const loteItem = inp.closest('.lote-item');
-  // Reset info panel while typing
   const info = loteItem.querySelector('[id$="-info"]');
   if(info) info.style.display='none';
   const jabInp = loteItem.querySelector('.jab-inp');
   if(jabInp){ jabInp.disabled=true; jabInp.style.opacity='.5'; }
   loteItem.dataset.loteValido='';
   if(!val){ inp.style.borderColor=''; return; }
-  // Visual hint only while typing
   const cultivos = loadData('Cultivos').filter(c=>c['Estado']==='Activo');
   const exact = cultivos.find(c=>String(c['Lote']||'').toUpperCase()===val);
   inp.style.borderColor = exact ? 'var(--green-border)' : 'var(--red-border)';
@@ -1133,7 +1135,6 @@ function onLoteKeydown(inp, e){
   if(exact){
     fillLoteInfo(loteItem, exact);
     inp.style.borderColor='var(--green-border)';
-    // Move focus to jabas input
     const jabInp = loteItem.querySelector('.jab-inp');
     if(jabInp){ jabInp.disabled=false; jabInp.style.opacity='1'; jabInp.focus(); jabInp.select(); }
   } else {
@@ -1142,8 +1143,6 @@ function onLoteKeydown(inp, e){
     toast('Lote "'+val+'" no encontrado en el maestro de Cultivos.',true);
   }
 }
-
-// selectLote removed — no suggestions dropdown
 
 function fillLoteInfo(loteItem, c){
   const info = loteItem.querySelector('[id$="-info"]');
@@ -1155,8 +1154,6 @@ function fillLoteInfo(loteItem, c){
     loteItem.querySelector('.lot-patron').textContent  = c['Patrón']||'—';
     loteItem.querySelector('.lot-copa').textContent    = c['Copa']||'—';
   }
-  // jabas enabled by onLoteKeydown after Enter
-  // Store cultivo data on lote item
   loteItem.dataset.loteValido='true';
   loteItem.dataset.cultivo=JSON.stringify(c);
 }
@@ -1169,6 +1166,7 @@ function clearLoteInfo(loteItem){
   loteItem.dataset.loteValido='';
   calcTotal();
 }
+
 function getSuperOptions(){
   const sups=loadData('Supervisores').filter(s=>s['Estado']==='Activo');
   if(!sups.length) return '<option value="">— sin supervisores —</option>';
@@ -1205,7 +1203,6 @@ function addLote(){
       <label>N° jabas</label>
       <input type="number" min="0" class="jab-inp" placeholder="0" oninput="calcTotal()" disabled style="opacity:.5"/>
     </div>`;
-  // Make ff with lot-inp relative for dropdown
   div.querySelector('.lot-inp').parentElement.style.position='relative';
   g('trp-lotes-container').appendChild(div);
 }
@@ -1225,7 +1222,7 @@ function registrarViaje(){
     const sup=div.querySelector('.sup-sel')?.value||'';
     const lot=(div.querySelector('.lot-inp')?.value||'').trim().toUpperCase();
     const jab=parseInt(div.querySelector('.jab-inp')?.value)||0;
-    if(!lot) return; // skip empty lotes
+    if(!lot) return;
     if(!div.dataset.loteValido){ toast('El lote "'+lot+'" no existe en el maestro de Cultivos.',true); return; }
     if(sup||lot||jab>0) lotes.push({supervisor:sup||'—',lote:lot||'—',enviadas:jab,recibidas:null});
   });
@@ -1233,13 +1230,11 @@ function registrarViaje(){
   const totalEnv=lotes.reduce((a,l)=>a+l.enviadas,0);
   const guia='GT-'+String(guiaNum).padStart(4,'0'); guiaNum++;
   const now2=new Date();
-  const fechaLocal=now2.toLocaleDateString('es-PE'); // e.g. 6/5/2026
+  const fechaLocal=now2.toLocaleDateString('es-PE');
   const fechaISO=now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-'+String(now2.getDate()).padStart(2,'0');
   const viaje={id:Date.now(),guia,chofer,tipo,hcarga,hsalida,hllegada,descInicio:'',descFin:'',lotes,totalEnv,totalRec:null,estado:'transito',obs:'',fecha:fechaLocal,fechaISO:fechaISO};
   const viajes=loadData('viajes'); viajes.unshift(viaje); saveData('viajes',viajes);
-  // Reset form completamente
   g('trp-chofer').value=''; g('trp-tipo').value='';
-  // Resetear horas
   ['carga','salida','llegada'].forEach(tipo=>{
     const key=tipo==='carga'?'hcarga':tipo==='salida'?'hsalida':'hllegada';
     const inp=g('trp-'+key);
@@ -1250,7 +1245,6 @@ function registrarViaje(){
     if(btn){btn.textContent='● Marcar';btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.disabled=false;btn.className='btn btn-primary';btn.style.cssText='padding:8px 14px;font-size:12px';}
   });
   g('trp-lotes-container').innerHTML=''; loteCount=0; calcTotal(); addLote();
-  // Limpiar borrador
   localStorage.removeItem('traz_borrador');
   actualizarBotonPrincipal();
   renderViajesList();
@@ -1279,10 +1273,8 @@ function renderViajesList(){
   g('trp-stat-jabas').textContent=totalJabas;
   g('trp-count-label').textContent='— '+hoy.length+' registrados';
   if(!hoy.length){g('trp-viajes-list').innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:13px">Sin viajes registrados hoy.</div>';return;}
-  // Sort: transito first, enviado second, recibido last
   const ordenEstado = {transito:0, enviado:1, recibido:2, recepcionado:2};
   hoy.sort((a,b)=>(ordenEstado[a.estado]||0)-(ordenEstado[b.estado]||0));
-
   g('trp-viajes-list').innerHTML=hoy.map(v=>{
     const dif=v.totalRec!==null?v.totalRec-v.totalEnv:null;
     let badge='';
@@ -1290,7 +1282,6 @@ function renderViajesList(){
     else if(v.estado==='enviado')   badge='<span class="badge badge-rol">Enviado</span>';
     else if(dif===0)                badge='<span class="badge badge-received">Recepcionado</span>';
     else                            badge='<span class="badge badge-diff">Recepcionado · Dif: '+(dif>0?'+':'')+dif+'</span>';
-
     let syncBtn='';
     if(v.estado==='transito'){
       syncBtn=`<button onclick="enviarGuia('${v.id}',event)" style="font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--blue-border);background:var(--blue-bg);color:var(--blue);margin-top:6px">↑ Exportar guía a recepción</button>`;
@@ -1386,10 +1377,7 @@ function renderRecList(){
   const now=new Date();
   const todayISO=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   const todayLocal=now.toLocaleDateString('es-PE');
-  // Match by fechaISO or fecha, accept enviado/recibido/recepcionado
   const esHoy=v=>(v.fechaISO===todayISO||v.fecha===todayLocal);
-  // Pendientes (enviado): todas las fechas — no se limita al día
-  // Recepcionadas: solo las de hoy
   const enviados=viajes.filter(v=>v.estado==='enviado');
   const recibidos=viajes.filter(v=>(v.estado==='recibido'||v.estado==='recepcionado')&&esHoy(v));
   const hoy=[...enviados,...recibidos];
@@ -1426,11 +1414,6 @@ function selectViaje(id){
   const v=viajes.find(x=>String(x.id)===String(id));
   if(!v)return;
   g('rec-detail-empty').style.display='none';
-  // En móvil, hacer scroll al detalle que está debajo de la lista
-  setTimeout(()=>{
-    const det=g('rec-detail-content');
-    if(det) det.scrollIntoView({behavior:'smooth', block:'start'});
-  }, 100);
   g('rec-detail-content').style.display='block';
   g('rec-detail-title').textContent='Detalle — '+v.guia;
   const confirmado=(v.estado==='recepcionado');
@@ -1442,9 +1425,7 @@ function selectViaje(id){
     <div class="rec-info-row"><span class="rec-info-label">Hora de salida</span><span class="rec-info-val">${v.hsalida}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Hora de llegada</span><span class="rec-info-val">${v.hllegada}</span></div>
     <div class="rec-info-row"><span class="rec-info-label">Lotes</span><span class="rec-info-val">${[...new Set(v.lotes.map(l=>l.lote))].join(', ')}</span></div>`;
-  // Reset descarga buttons first
   resetDescargaBtns();
-  // Restore state if already marked
   if(v.descInicio){
     g('rec-desc-inicio').value=v.descInicio;
     const d1=g('rec-desc-inicio-display');
@@ -1465,15 +1446,11 @@ function selectViaje(id){
   }
   g('rec-obs').value=v.obs||'';
   g('rec-obs').disabled=confirmado;
-
   g('rec-confirm-btn').style.display=confirmado?'none':'block';
   g('rec-problema-btn').style.display=confirmado?'none':'block';
   g('rec-resultado').style.display='none';
-
   if(confirmado){
-    // Mostrar comparativo completo
     let html='';
-    // Group by lote for display
     const loteResMap={};
     v.lotes.forEach(l=>{
       const key=String(l.lote);
@@ -1499,7 +1476,6 @@ function selectViaje(id){
     html+=`<div class="alert-box ${resClass}" style="margin-top:10px">${resMsg}</div>`;
     g('rec-lotes-inputs').innerHTML=html;
   } else {
-    // Entradas ciegas — agrupar por número de lote
     const loteMap={};
     v.lotes.forEach(l=>{
       const key=String(l.lote);
@@ -1540,10 +1516,8 @@ function confirmarRecepcion(){
   if(idx===-1)return;
   const v=viajes[idx];
   let totalRec=0,ok=true;
-  // Use grouped lotes if available
   const lotesAgrupados=window._recLotesAgrupados||null;
   const count=lotesAgrupados?lotesAgrupados.length:v.lotes.length;
-  // Read inputs (one per grouped lote)
   const recPorLote={};
   for(let i=0;i<count;i++){
     const inp=g('rec-inp-'+i);
@@ -1553,9 +1527,6 @@ function confirmarRecepcion(){
     recPorLote[key]=(recPorLote[key]||0)+val;
     totalRec+=val;
   }
-  // Distribute recibidas proportionally across original lotes with same key
-  // e.g. 3 lotes of "50" with 50 enviadas each = 150 total enviadas
-  // if recibidas=250, distribute: lote1=83, lote2=83, lote3=84
   const totalEnvByLote={};
   v.lotes.forEach(l=>{
     const key=String(l.lote);
@@ -1564,25 +1535,22 @@ function confirmarRecepcion(){
   const assignedByLote={};
   v.lotes.forEach(l=>{
     const key=String(l.lote);
-    const totalRec=recPorLote[key]||0;
-    const totalEnv=totalEnvByLote[key]||1;
-    const ratio=(parseInt(l.enviadas)||0)/totalEnv;
-    const assigned=Math.round(totalRec*ratio);
+    const totalRecLote=recPorLote[key]||0;
+    const totalEnvLote=totalEnvByLote[key]||1;
+    const ratio=(parseInt(l.enviadas)||0)/totalEnvLote;
+    const assigned=Math.round(totalRecLote*ratio);
     assignedByLote[key]=(assignedByLote[key]||0)+assigned;
     l.recibidas=assigned;
   });
-  // Fix rounding: ensure sum of assigned == recibidas per lote group
   v.lotes.forEach((l,i)=>{
     const key=String(l.lote);
     if(i===v.lotes.map(x=>String(x.lote)).lastIndexOf(key)){
-      // Last lote of this group — fix rounding difference
       const sumSoFar=v.lotes.filter((x,j)=>String(x.lote)===key&&j<=i).reduce((a,x)=>a+(x.recibidas||0),0);
       const expected=recPorLote[key]||0;
       l.recibidas+=(expected-sumSoFar);
     }
   });
   if(!ok){toast('Ingresa las jabas recibidas en todos los lotes.',true);return;}
-  // Validar hora inicio y fin de descarga
   const descInicio=g('rec-desc-inicio').value;
   const descFin=g('rec-desc-fin').value;
   if(!descInicio){toast('Marca la hora de inicio de descarga.',true);return;}
@@ -1621,19 +1589,21 @@ function jsonp(params){
     const timer=setTimeout(()=>{
       delete window[cb];
       if(script.parentNode)script.parentNode.removeChild(script);
-      reject(new Error('Timeout'));
-    },12000);
+      reject(new Error('Timeout: la solicitud excedió el tiempo límite'));
+    },15000); // Aumentado a 15 segundos
     window[cb]=function(data){
       clearTimeout(timer);
       delete window[cb];
       if(script.parentNode)script.parentNode.removeChild(script);
       resolve(data);
     };
-    script.src=API+'?'+new URLSearchParams(Object.assign({},params,{callback:cb})).toString();
+    const queryString = new URLSearchParams(Object.assign({},params,{callback:cb})).toString();
+    script.src=API+'?'+queryString;
     script.onerror=()=>{
-      clearTimeout(timer);delete window[cb];
+      clearTimeout(timer);
+      delete window[cb];
       if(script.parentNode)script.parentNode.removeChild(script);
-      reject(new Error('Error'));
+      reject(new Error('Error de red al cargar el script'));
     };
     document.head.appendChild(script);
   });
@@ -1661,14 +1631,12 @@ async function enviarGuia(id, event){
   const btn=event?event.target:null;
   if(btn){btn.textContent='Enviando...';btn.disabled=true;}
   try{
-    // Push with estado='enviado' to Sheet regardless of local estado
     const vParaSheet = Object.assign({}, v, {estado:'enviado'});
     const res=await jsonp({action:'pushViaje',viaje:JSON.stringify(vParaSheet)});
     if(res&&res.ok){
-      // Update local estado to 'enviado'
       const idx=viajes.findIndex(x=>String(x.id)===String(id));
       if(idx!==-1){ viajes[idx].estado='enviado'; saveData('viajes',viajes); }
-      renderViajesList(); // renderiza con nuevo estado 'enviado'
+      renderViajesList();
       toast('Guía '+v.guia+' exportada a recepción.','ok');
     }else{
       toast('Error al enviar: '+(res.error||'desconocido'),true);
@@ -1689,32 +1657,24 @@ async function actualizarRecepcion(){
     if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
     return;
   }
-  // Limpiar local de recepción antes de recargar (solo enviado y recepcionado)
   const todosLocal = loadData('viajes');
   const soloTransito = todosLocal.filter(v=>v.estado==='transito');
-  saveData('viajes', soloTransito); // solo conserva los en tránsito locales
+  saveData('viajes', soloTransito);
   try{
     const res=await jsonp({action:'getViajes',estado:''});
     if(res&&res.ok&&res.rows){
-      // Merge cloud viajes into local — cloud is source of truth for received viajes
       const local=loadData('viajes');
       const localIds=new Set(local.map(v=>String(v.id)));
       let added=0,updated=0;
       res.rows.forEach(cloudV=>{
-        // Only process enviado or recibido from cloud
-        if(cloudV.estado==='transito') return; // skip, never show transito in recepcion
-        // Parse lotes if string
+        if(cloudV.estado==='transito') return;
         if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
-        // Convert numeric strings
-        // Keep original string formats — only convert what's strictly needed
         cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
         cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
           ? parseInt(cloudV.totalRec) : null;
-        cloudV.id = cloudV.id; // keep as-is
+        cloudV.id = cloudV.id;
         const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
-        // Ensure fechaISO is present on cloud viaje
         if(!cloudV.fechaISO && cloudV.fecha){
-          // Try to parse fecha to ISO
           try{
             const parts = cloudV.fecha.split('/');
             if(parts.length===3){
@@ -1742,7 +1702,6 @@ async function actualizarRecepcion(){
 }
 
 async function sincronizarRecepcionConfirmada(viaje){
-  // Update local transport viajes estado to 'recepcionado'
   const viajesLocal = loadData('viajes');
   const idx = viajesLocal.findIndex(v=>String(v.id)===String(viaje.id));
   if(idx!==-1){
@@ -1755,9 +1714,8 @@ async function sincronizarRecepcionConfirmada(viaje){
       lotes:viaje.lotes
     });
     saveData('viajes', viajesLocal);
-    renderViajesList(); // refresh transport list
+    renderViajesList();
   }
-  // Push to cloud
   const online = await checkSyncStatus();
   if(!online) return;
   try{
@@ -1773,120 +1731,38 @@ async function sincronizarRecepcionConfirmada(viaje){
         lotes:viaje.lotes
       })
     });
-  }catch(e){/* silent fail */}
+  }catch(e){}
 }
 
 // ═══════════════════════════════════════
-//  AUTO SYNC & LIMPIEZA
+//  TRACKING DE SINCRONIZACIÓN (para evitar duplicados)
 // ═══════════════════════════════════════
-
-async function actualizarRecepcion(){
-  const btn=event?event.target:null;
-  if(btn){btn.textContent='Actualizando...';btn.disabled=true;}
-  const online=await checkSyncStatus();
-  if(!online){
-    toast('Sin conexión. No se puede actualizar.',true);
-    if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
-    return;
-  }
-  // Limpiar local de recepción antes de recargar (solo enviado y recepcionado)
-  const todosLocal = loadData('viajes');
-  const soloTransito = todosLocal.filter(v=>v.estado==='transito');
-  saveData('viajes', soloTransito); // solo conserva los en tránsito locales
-  try{
-    const res=await jsonp({action:'getViajes',estado:''});
-    if(res&&res.ok&&res.rows){
-      // Merge cloud viajes into local — cloud is source of truth for received viajes
-      const local=loadData('viajes');
-      const localIds=new Set(local.map(v=>String(v.id)));
-      let added=0,updated=0;
-      res.rows.forEach(cloudV=>{
-        // Only process enviado or recibido from cloud
-        if(cloudV.estado==='transito') return; // skip, never show transito in recepcion
-        // Parse lotes if string
-        if(typeof cloudV.lotes==='string'){try{cloudV.lotes=JSON.parse(cloudV.lotes);}catch(e){cloudV.lotes=[];}}
-        // Convert numeric strings
-        // Keep original string formats — only convert what's strictly needed
-        cloudV.totalEnv = parseInt(cloudV.totalEnv)||0;
-        cloudV.totalRec = (cloudV.totalRec!==''&&cloudV.totalRec!==null&&cloudV.totalRec!==undefined&&cloudV.totalRec!=='null')
-          ? parseInt(cloudV.totalRec) : null;
-        cloudV.id = cloudV.id; // keep as-is
-        const localIdx=local.findIndex(v=>String(v.id)===String(cloudV.id));
-        // Ensure fechaISO is present on cloud viaje
-        if(!cloudV.fechaISO && cloudV.fecha){
-          // Try to parse fecha to ISO
-          try{
-            const parts = cloudV.fecha.split('/');
-            if(parts.length===3){
-              cloudV.fechaISO = parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
-            }
-          }catch(e){}
-        }
-        if(localIdx===-1){
-          if((ESTADO_PRIORITY[cloudV.estado]||0) >= 1) { local.unshift(cloudV); added++; }
-        } else {
-          const lp = ESTADO_PRIORITY[local[localIdx].estado]||0;
-          const cp = ESTADO_PRIORITY[cloudV.estado]||0;
-          if(cp >= lp){ local[localIdx]=Object.assign(local[localIdx],cloudV); }
-          updated++;
-        }
-      });
-      saveData('viajes',local);
-      renderRecList();
-      toast('Actualizado: '+added+' nuevas, '+updated+' actualizadas.','ok');
-    }
-  }catch(e){
-    toast('Error al actualizar. Intenta de nuevo.',true);
-  }
-  if(btn){btn.textContent='↓ Actualizar';btn.disabled=false;}
+function syncKey(name, record){
+  if(name==='Usuarios')       return 'U|'+(record['DNI']||'')+'|'+(record['Usuario']||'');
+  if(name==='Cultivos')       return 'C|'+(record['Lote']||record['Cultivo']||'')+'|'+(record['Módulo']||'');
+  if(name==='Supervisores')   return 'S|'+(record['DNI']||'');
+  if(name==='Transportistas') return 'T|'+(record['DNI']||'');
+  if(name==='Trabajadores')   return 'W|'+(record['DNI']||'');
+  return JSON.stringify(record);
 }
 
-async function sincronizarRecepcionConfirmada(viaje){
-  // Update local transport viajes estado to 'recepcionado'
-  const viajesLocal = loadData('viajes');
-  const idx = viajesLocal.findIndex(v=>String(v.id)===String(viaje.id));
-  if(idx!==-1){
-    viajesLocal[idx] = Object.assign(viajesLocal[idx], {
-      estado:'recepcionado',
-      totalRec:viaje.totalRec,
-      descInicio:viaje.descInicio,
-      descFin:viaje.descFin,
-      obs:viaje.obs,
-      lotes:viaje.lotes
-    });
-    saveData('viajes', viajesLocal);
-    renderViajesList(); // refresh transport list
-  }
-  // Push to cloud
-  const online = await checkSyncStatus();
-  if(!online) return;
-  try{
-    await jsonp({
-      action:'updateViaje',
-      guia:viaje.guia,
-      data:JSON.stringify({
-        estado:'recepcionado',
-        totalRec:viaje.totalRec,
-        descInicio:viaje.descInicio,
-        descFin:viaje.descFin,
-        obs:viaje.obs,
-        lotes:viaje.lotes
-      })
-    });
-  }catch(e){/* silent fail */}
+function getSynced(name){
+  try{ return new Set(JSON.parse(localStorage.getItem('traz_synced_'+name)||'[]')); }
+  catch(e){ return new Set(); }
+}
+
+function saveSynced(name, set){
+  localStorage.setItem('traz_synced_'+name, JSON.stringify([...set]));
 }
 
 // ═══════════════════════════════════════
-//  AUTO SYNC & LIMPIEZA
+//  ESTADO PRIORITY & LIMPIEZA
 // ═══════════════════════════════════════
-// Estado priority: recepcionado > recibido > enviado > transito
 const ESTADO_PRIORITY = {transito:0, enviado:1, recibido:2, recepcionado:3};
-
 
 function limpiarViajesLocal(from){
   if(from==='trp'){
     if(!confirm('¿Limpiar los viajes del día (en tránsito y enviados)? No afecta reportes ni el Sheet.')) return;
-    // Solo elimina transito y enviado — conserva recepcionados para reportes
     const todos = loadData('viajes');
     const conservar = todos.filter(v=>v.estado==='recibido'||v.estado==='recepcionado');
     saveData('viajes', conservar);
@@ -1898,7 +1774,6 @@ function limpiarViajesLocal(from){
 function limpiarReportes(){
   if(!confirm('¿Limpiar los reportes guardados? Solo afecta el almacenamiento local.')) return;
   const todos = loadData('viajes');
-  // Solo conserva los que NO son recepcionados (transito, enviado)
   const conservar = todos.filter(v=>v.estado!=='recibido'&&v.estado!=='recepcionado');
   saveData('viajes', conservar);
   renderReportes();
@@ -1944,33 +1819,72 @@ const MAESTROS_SYNC = ['Supervisores','Transportistas','Cultivos','Trabajadores'
 
 async function publicarMaestro(name){
   const online = await checkSyncStatus();
-  if(!online){toast('Sin conexión.',true);return;}
+  if(!online){ toast('Sin conexión.',true); return; }
   const data = loadData(name);
-  if(!data.length){toast('Sin datos para publicar.',true);return;}
-  toast('Publicando '+name+'...','ok');
-  try{
-    const res = await jsonp({action:'importAll',sheet:name,records:JSON.stringify(data)});
-    if(res&&res.ok) toast(name+' publicado: '+res.imported+' registros.','ok');
-    else toast('Error al publicar '+name,true);
-  }catch(e){toast('Error de conexión.',true);}
-}
+  if(!data.length){ toast('Sin datos para publicar.',true); return; }
 
-async function publicarMaestro(name){
-  const online = await checkSyncStatus();
-  if(!online){toast('Sin conexión.',true);return;}
-  const data = loadData(name);
-  if(!data.length){toast('Sin datos para publicar.',true);return;}
-  toast('Publicando '+name+'...','ok');
-  try{
-    const res = await jsonp({action:'importAll',sheet:name,records:JSON.stringify(data)});
-    if(res&&res.ok) toast(name+' publicado: '+res.inserted+' nuevos, '+res.updated+' actualizados.','ok');
-    else toast('Error al publicar '+name,true);
-  }catch(e){toast('Error de conexión.',true);}
-}
+  const synced = getSynced(name);
+  const nuevos = [];
+  const nuevasKeys = [];
 
-async function publicarMaestros(){
-  // Keep for backwards compatibility
-  for(const name of MAESTROS_SYNC) await publicarMaestro(name);
+  data.forEach(r => {
+    const k = syncKey(name, r);
+    if(!synced.has(k)){
+      nuevos.push(r);
+      nuevasKeys.push(k);
+    }
+  });
+
+  if(nuevos.length === 0){
+    toast('Todos los registros de '+name+' ya están publicados.','ok');
+    return;
+  }
+
+  if(!confirm(`Se publicarán ${nuevos.length} registros NUEVOS de ${name} al servidor. ¿Continuar?`)) return;
+
+  // Determinar tamaño de lote según el maestro
+  // Cultivos tiene muchos campos (18+), requiere lotes más pequeños
+  const batchSize = (name === 'Cultivos') ? 5 : 
+                    (name === 'Trabajadores') ? 15 : 30;
+  
+  let publicados = 0;
+  let errores = 0;
+  
+  toast('Publicando '+name+' (0/'+nuevos.length+')...','ok');
+  
+  for(let i = 0; i < nuevos.length; i += batchSize){
+    const lote = nuevos.slice(i, i + batchSize);
+    const loteKeys = nuevasKeys.slice(i, i + batchSize);
+    
+    try{
+      const res = await jsonp({
+        action: 'importAll', 
+        sheet: name, 
+        records: JSON.stringify(lote)
+      });
+      
+      if(res && res.ok){
+        loteKeys.forEach(k => synced.add(k));
+        saveSynced(name, synced);
+        publicados += lote.length;
+        toast('Publicando '+name+' ('+publicados+'/'+nuevos.length+')...','ok');
+      } else {
+        errores += lote.length;
+        console.error('Error en lote:', res?.error || 'desconocido');
+      }
+    } catch(e){
+      errores += lote.length;
+      console.error('Error de conexión en lote:', e);
+      // Pequeña pausa antes de reintentar
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+  
+  if(errores === 0){
+    toast(name+': '+publicados+' publicados correctamente.','ok');
+  } else {
+    toast(name+': '+publicados+' publicados, '+errores+' errores. Revise conexión.','err');
+  }
 }
 
 async function sincronizarMaestros(){
@@ -1984,6 +1898,7 @@ async function sincronizarMaestros(){
       if(res&&res.ok&&res.rows){
         saveData(name,res.rows);
         renderCfgTable(name);
+        localStorage.removeItem('traz_synced_'+name);
         ok++;
       }else err++;
     }catch(e){err++;}
@@ -2001,10 +1916,6 @@ function toast(msg,type=''){
   t.className=type?'show '+type:'show';
   clearTimeout(t._t); t._t=setTimeout(()=>t.className='',3200);
 }
-
-// ═══════════════════════════════════════
-//  INIT — run after login (enterApp)
-// ═══════════════════════════════════════
 
 </script>
 </body>
