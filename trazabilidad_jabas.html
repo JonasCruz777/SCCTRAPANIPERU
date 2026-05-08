@@ -594,13 +594,16 @@ async function doLogin(){
       const res=await jsonp({action:'login',usuario,pass:hash});
       if(res&&res.ok){
         user={nombre:res.nombre,rol:res.rol,usuario,accesos:res.accesos||{}};
-        // Cache locally for offline
         localStorage.setItem('traz_session',JSON.stringify({usuario,hash,nombre:res.nombre,rol:res.rol}));
       } else {
-        errEl.textContent=res.msg||'Usuario o contraseña incorrectos.';
-        btn.disabled=false; btn.textContent='Ingresar'; return;
+        // Wrong credentials online — also try local in case Sheet not yet updated
+        user=tryOfflineLogin(usuario,hash,errEl,btn);
+        if(!user){errEl.textContent=res.msg||'Usuario o contraseña incorrectos.';btn.disabled=false;btn.textContent='Ingresar';return;}
       }
-    }catch(e){online&&(user=tryOfflineLogin(usuario,hash,errEl,btn));}
+    }catch(e){
+      // Network error — try offline
+      user=tryOfflineLogin(usuario,hash,errEl,btn);
+    }
   } else {
     user=tryOfflineLogin(usuario,hash,errEl,btn);
   }
@@ -611,11 +614,24 @@ async function doLogin(){
 
 function tryOfflineLogin(usuario,hash,errEl,btn){
   document.getElementById('l-offline').style.display='block';
+  // Try cached session first
   const cached=JSON.parse(localStorage.getItem('traz_session')||'null');
   if(cached&&cached.usuario===usuario&&cached.hash===hash){
     return {nombre:cached.nombre,rol:cached.rol,usuario,accesos:{}};
   }
-  errEl.textContent='Sin conexión y sin sesión guardada para este usuario.';
+  // Try local Usuarios table directly
+  const usuarios=JSON.parse(localStorage.getItem('traz_Usuarios')||'[]');
+  const found=usuarios.find(u=>String(u['Usuario']).trim()===String(usuario).trim()
+    && String(u['Contraseña']).trim()===String(hash).trim()
+    && u['Estado']==='Activo');
+  if(found){
+    // Cache session for future offline logins
+    localStorage.setItem('traz_session',JSON.stringify({
+      usuario,hash,nombre:found['Apellidos y Nombres'],rol:found['Rol']
+    }));
+    return {nombre:found['Apellidos y Nombres'],rol:found['Rol'],usuario,accesos:{}};
+  }
+  errEl.textContent='Usuario o contraseña incorrectos.';
   return null;
 }
 
