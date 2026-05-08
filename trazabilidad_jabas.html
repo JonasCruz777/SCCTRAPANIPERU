@@ -270,7 +270,6 @@ tr:hover td{background:var(--bg3)}
 <!-- ══════════════ MÓDULO CONFIGURACIÓN ══════════════ -->
 <div class="module active" id="mod-cfg">
   <div class="cfg-sidebar">
-
     <div class="nav-item active" onclick="showCfgPage('Usuarios',this)">
       <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Usuarios
     </div>
@@ -565,9 +564,7 @@ async function doLogin(){
     const res=await jsonp({action:'login',usuario,pass:hash});
     if(res&&res.ok){
       user={nombre:res.nombre,rol:res.rol,usuario,accesos:res.accesos||{}};
-      // Cache for offline use
       localStorage.setItem('traz_session',JSON.stringify({usuario,hash,nombre:res.nombre,rol:res.rol}));
-      // Also cache Usuarios locally so other modules work
       try{
         const allUsers=await jsonp({action:'getAll',sheet:'Usuarios'});
         if(allUsers&&allUsers.ok&&allUsers.rows) saveData('Usuarios',allUsers.rows);
@@ -577,7 +574,6 @@ async function doLogin(){
     document.getElementById('l-offline').style.display='block';
   }
 
-  // 2. If Sheet failed or unreachable, try local
   if(!user){
     user=tryOfflineLogin(usuario,hash,errEl,btn);
   }
@@ -594,16 +590,13 @@ function tryOfflineLogin(usuario, hash, errEl, btn){
   const offlineEl = document.getElementById('l-offline');
   if(offlineEl) offlineEl.style.display='block';
 
-  // 1. Sesión cacheada
   const cached = JSON.parse(localStorage.getItem('traz_session')||'null');
   if(cached && cached.usuario.toLowerCase()===usuario.toLowerCase() && cached.hash===hash){
     return {nombre:cached.nombre, rol:cached.rol, usuario, accesos:{}};
   }
 
-  // 2. Tabla Usuarios local (sincronizada del Sheet o creada offline)
   const usuarios = JSON.parse(localStorage.getItem('traz_Usuarios')||'[]');
   
-  // Si no hay usuarios locales, mostrar mensaje específico y botón de emergencia
   if(usuarios.length===0){
     errEl.textContent='No hay usuarios locales. Sincronice datos primero.';
     crearBotonSincronizacionEmergencia(errEl);
@@ -633,7 +626,6 @@ function tryOfflineLogin(usuario, hash, errEl, btn){
     };
   }
 
-  // No coincide ningún usuario
   errEl.textContent='Usuario, contraseña incorrectos, o cuenta inactiva.';
   crearBotonSincronizacionEmergencia(errEl);
   return null;
@@ -1578,35 +1570,45 @@ function reportarProblema(){
 }
 
 // ═══════════════════════════════════════
-//  SYNC — VIAJES TIEMPO REAL
+//  SYNC — API
 // ═══════════════════════════════════════
 const API = 'https://script.google.com/macros/s/AKfycbwAfc8RL4mnCOqsmPaujcoc9xewmpYHZ5wpa49dHpboGGihWcFL0U9p6geufgGskUOIdQ/exec';
 
-function jsonp(params){
-  return new Promise((resolve,reject)=>{
-    const cb='cb_'+Date.now()+'_'+Math.floor(Math.random()*9999);
-    const script=document.createElement('script');
-    const timer=setTimeout(()=>{
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 9999);
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
       delete window[cb];
-      if(script.parentNode)script.parentNode.removeChild(script);
-      reject(new Error('Timeout: la solicitud excedió el tiempo límite'));
-    },15000); // Aumentado a 15 segundos
-    window[cb]=function(data){
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 15000);
+    window[cb] = function(data) {
       clearTimeout(timer);
       delete window[cb];
-      if(script.parentNode)script.parentNode.removeChild(script);
+      if (script.parentNode) script.parentNode.removeChild(script);
       resolve(data);
     };
-    const queryString = new URLSearchParams(Object.assign({},params,{callback:cb})).toString();
-    script.src=API+'?'+queryString;
-    script.onerror=()=>{
+    script.src = API + '?' + new URLSearchParams(Object.assign({}, params, { callback: cb })).toString();
+    script.onerror = () => {
       clearTimeout(timer);
       delete window[cb];
-      if(script.parentNode)script.parentNode.removeChild(script);
-      reject(new Error('Error de red al cargar el script'));
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Error de red'));
     };
     document.head.appendChild(script);
   });
+}
+
+async function postData(params) {
+  const formBody = new URLSearchParams(params).toString();
+  const response = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formBody
+  });
+  if (!response.ok) throw new Error('Error HTTP: ' + response.status);
+  return await response.json();
 }
 
 async function checkSyncStatus(){
@@ -1632,7 +1634,12 @@ async function enviarGuia(id, event){
   if(btn){btn.textContent='Enviando...';btn.disabled=true;}
   try{
     const vParaSheet = Object.assign({}, v, {estado:'enviado'});
-    const res=await jsonp({action:'pushViaje',viaje:JSON.stringify(vParaSheet)});
+    let res;
+    try {
+      res = await postData({ action: 'pushViaje', viaje: JSON.stringify(vParaSheet) });
+    } catch(e) {
+      res = await jsonp({ action: 'pushViaje', viaje: JSON.stringify(vParaSheet) });
+    }
     if(res&&res.ok){
       const idx=viajes.findIndex(x=>String(x.id)===String(id));
       if(idx!==-1){ viajes[idx].estado='enviado'; saveData('viajes',viajes); }
@@ -1664,7 +1671,6 @@ async function actualizarRecepcion(){
     const res=await jsonp({action:'getViajes',estado:''});
     if(res&&res.ok&&res.rows){
       const local=loadData('viajes');
-      const localIds=new Set(local.map(v=>String(v.id)));
       let added=0,updated=0;
       res.rows.forEach(cloudV=>{
         if(cloudV.estado==='transito') return;
@@ -1719,7 +1725,7 @@ async function sincronizarRecepcionConfirmada(viaje){
   const online = await checkSyncStatus();
   if(!online) return;
   try{
-    await jsonp({
+    const payload = {
       action:'updateViaje',
       guia:viaje.guia,
       data:JSON.stringify({
@@ -1730,12 +1736,17 @@ async function sincronizarRecepcionConfirmada(viaje){
         obs:viaje.obs,
         lotes:viaje.lotes
       })
-    });
-  }catch(e){}
+    };
+    try {
+      await postData(payload);
+    } catch(e) {
+      await jsonp(payload);
+    }
+  }catch(e){/* silent fail */}
 }
 
 // ═══════════════════════════════════════
-//  TRACKING DE SINCRONIZACIÓN (para evitar duplicados)
+//  TRACKING DE SINCRONIZACIÓN
 // ═══════════════════════════════════════
 function syncKey(name, record){
   if(name==='Usuarios')       return 'U|'+(record['DNI']||'')+'|'+(record['Usuario']||'');
@@ -1817,11 +1828,12 @@ function resetDescargaBtns(){
 // ═══════════════════════════════════════
 const MAESTROS_SYNC = ['Supervisores','Transportistas','Cultivos','Trabajadores','Usuarios'];
 
-async function publicarMaestro(name){
+async function publicarMaestro(name) {
   const online = await checkSyncStatus();
-  if(!online){ toast('Sin conexión.',true); return; }
+  if (!online) { toast('Sin conexión.', true); return; }
+  
   const data = loadData(name);
-  if(!data.length){ toast('Sin datos para publicar.',true); return; }
+  if (!data.length) { toast('Sin datos para publicar.', true); return; }
 
   const synced = getSynced(name);
   const nuevos = [];
@@ -1829,61 +1841,64 @@ async function publicarMaestro(name){
 
   data.forEach(r => {
     const k = syncKey(name, r);
-    if(!synced.has(k)){
+    if (!synced.has(k)) {
       nuevos.push(r);
       nuevasKeys.push(k);
     }
   });
 
-  if(nuevos.length === 0){
-    toast('Todos los registros de '+name+' ya están publicados.','ok');
+  if (nuevos.length === 0) {
+    toast('Todos los registros de ' + name + ' ya están publicados.', 'ok');
     return;
   }
 
-  if(!confirm(`Se publicarán ${nuevos.length} registros NUEVOS de ${name} al servidor. ¿Continuar?`)) return;
+  if (!confirm(`Se publicarán ${nuevos.length} registros NUEVOS de ${name} al servidor. ¿Continuar?`)) return;
 
-  // Determinar tamaño de lote según el maestro
-  // Cultivos tiene muchos campos (18+), requiere lotes más pequeños
-  const batchSize = (name === 'Cultivos') ? 5 : 
-                    (name === 'Trabajadores') ? 15 : 30;
+  toast('Publicando ' + name + '...', 'ok');
   
-  let publicados = 0;
-  let errores = 0;
-  
-  toast('Publicando '+name+' (0/'+nuevos.length+')...','ok');
-  
-  for(let i = 0; i < nuevos.length; i += batchSize){
-    const lote = nuevos.slice(i, i + batchSize);
-    const loteKeys = nuevasKeys.slice(i, i + batchSize);
+  try {
+    const res = await postData({
+      action: 'importAll',
+      sheet: name,
+      records: JSON.stringify(nuevos)
+    });
     
-    try{
-      const res = await jsonp({
-        action: 'importAll', 
-        sheet: name, 
-        records: JSON.stringify(lote)
-      });
-      
-      if(res && res.ok){
-        loteKeys.forEach(k => synced.add(k));
-        saveSynced(name, synced);
-        publicados += lote.length;
-        toast('Publicando '+name+' ('+publicados+'/'+nuevos.length+')...','ok');
-      } else {
-        errores += lote.length;
-        console.error('Error en lote:', res?.error || 'desconocido');
-      }
-    } catch(e){
-      errores += lote.length;
-      console.error('Error de conexión en lote:', e);
-      // Pequeña pausa antes de reintentar
-      await new Promise(r => setTimeout(r, 500));
+    if (res && res.ok) {
+      nuevasKeys.forEach(k => synced.add(k));
+      saveSynced(name, synced);
+      toast(name + ': ' + (res.total || nuevos.length) + ' publicados correctamente.', 'ok');
+    } else {
+      toast('Error al publicar ' + name + ': ' + (res.error || 'desconocido'), true);
     }
-  }
-  
-  if(errores === 0){
-    toast(name+': '+publicados+' publicados correctamente.','ok');
-  } else {
-    toast(name+': '+publicados+' publicados, '+errores+' errores. Revise conexión.','err');
+  } catch (e) {
+    console.error('POST falló, reintentando con JSONP...', e);
+    toast('Usando método alternativo...', 'ok');
+    
+    try {
+      const batchSize = 10;
+      let publicados = 0;
+      
+      for (let i = 0; i < nuevos.length; i += batchSize) {
+        const lote = nuevos.slice(i, i + batchSize);
+        const loteKeys = nuevasKeys.slice(i, i + batchSize);
+        
+        const res = await jsonp({
+          action: 'importAll',
+          sheet: name,
+          records: JSON.stringify(lote)
+        });
+        
+        if (res && res.ok) {
+          loteKeys.forEach(k => synced.add(k));
+          saveSynced(name, synced);
+          publicados += lote.length;
+        }
+      }
+      
+      toast(name + ': ' + publicados + ' publicados.', 'ok');
+    } catch (e2) {
+      toast('Error de conexión al publicar.', true);
+    }
   }
 }
 
